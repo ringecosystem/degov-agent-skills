@@ -1,18 +1,29 @@
 ---
 name: dao-governance
+version: 0.3.0
 description: Use when users ask DAO research questions. Answer with Degov Agent API data first, then use web search when API coverage is insufficient.
 ---
 
 # DAO Governance Skill
 
-Use this skill to answer DAO governance questions with Degov Agent API data first, then fall back to web search only when API coverage is insufficient.
+## When to use this skill
+
+Use this skill when a user asks a question about Web3 DAO governance, such as:
+
+- "What has ENS been doing lately?"
+- "What are the biggest DAO governance stories this week?"
+- "Can you explain this ENS proposal?"
+- "What's the Uniswap governance mechanism?"
+- "How do I participate in Arbitrum governance?"
+
+These questions are common among people who want to understand how the DAOs they care about are making decisions, what proposals are active, and how governance works in practice. This skill is designed to provide clear and high-quality answers to those questions by leveraging the Degov Agent API capabilities.
 
 ## Setup
 
-Default managed wallet path:
-- `~/.agents/state/dao-governance/wallet.json`
+Note: this skill relies on Degov Agent API, which is a paid service. The payment is handled through x402 wallets on Base, the script will create and manage a dedicated local wallet for you, then you
+fund that wallet with USDC according to your expected usage. This avoid leaking your private keys or asking you to paste them into the terminal.
 
-Initialize the local wallet:
+Firstly, initialize the local wallet:
 
 ```bash
 cd skills/dao-governance/scripts
@@ -21,23 +32,40 @@ export DEGOV_AGENT_WALLET_PASSPHRASE="choose-a-strong-passphrase"
 pnpm exec tsx degov-client.ts wallet init
 pnpm exec tsx degov-client.ts wallet address
 ```
-
-Then fund that Base address with USDC.
-
-Optional API override:
+Then fund that Base address with some USDC, according to your expected usage. You can then check the balance with:
 
 ```bash
-export DEGOV_AGENT_API_BASE_URL="http://127.0.0.1:3310"
+pnpm exec tsx degov-client.ts wallet balance
 ```
 
-## Research workflow
+If you see the balance, you are ready to use the full capabilities of the API. 
 
-1. Read the user question and infer what they really want.
-2. Identify the likely DAO or DAO group first.
-3. Choose the smallest useful set of API endpoints.
-4. Batch the API queries, gather all results, then synthesize them.
-5. Follow links from the API data when you need deeper context.
-6. Use web search only when the API or linked materials are not enough.
+Note: The wallet data is stored locally in an encrypted file. Do not share that file or the passphrase with anyone. The default path for the wallet file is `~/.agents/state/dao-governance/wallet.json`. 
+
+## Available commands
+
+Once the wallet is set up and funded, the following commands are available for research:
+
+```bash
+# Initialize wallet (only needed once)
+pnpm exec tsx degov-client.ts wallet init
+# Check wallet address and balance
+pnpm exec tsx degov-client.ts wallet address
+pnpm exec tsx degov-client.ts wallet balance
+# Check current API pricing and budget for 1 USD of usage
+pnpm exec tsx degov-client.ts budget --usd 1
+# Explore DAOs, recent activity, briefs, specific items, data freshness, and health status
+pnpm exec tsx degov-client.ts daos
+pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
+pnpm exec tsx degov-client.ts brief ens
+pnpm exec tsx degov-client.ts item proposal <id>
+pnpm exec tsx degov-client.ts freshness
+pnpm exec tsx degov-client.ts health
+```
+
+## Stardard workflow for answering questions
+
+This section describes the best practices for answering user questions about DAO governance.
 
 ### Query planning for vague questions
 
@@ -121,10 +149,22 @@ Use bullets carefully:
 
 For normal research questions, aim for this structure:
 
-1. A short plain-language summary paragraph.
+1. A plain-language summary section.
 2. `Key points` with 3-5 bullets when there are several findings.
-3. A short `Why it matters` explanation when the topic is complex.
-4. A brief source note saying whether the answer came from Degov Agent API, the web, or both.
+3. An optional `Why it matters` section only when it genuinely helps the user.
+4. A `Related links` section with the key source URLs users may want to open.
+
+Summary rules:
+- minimum: one full paragraph
+- it may be more than one paragraph when the topic needs it
+- keep the language simple
+- if you refer to outside materials while explaining, show those references as clickable markdown links
+
+Link rules:
+- do not add a generic `Source note`
+- instead, show the most useful URLs directly
+- prefer official forum threads, proposal pages, Snapshot links, and official announcements
+- keep the link list short and relevant
 
 Good example qualities:
 - easy to read
@@ -137,6 +177,8 @@ Avoid:
 - unexplained abbreviations
 - overly dry or robotic wording
 - giant bullet lists with no narrative
+- a mandatory `Why it matters` section when it adds no value
+- vague source statements without real links
 
 ## Example workflows
 
@@ -184,18 +226,16 @@ Good workflow:
 
 Example:
 
-"Here is the simple version: ENS has mainly been working on one budget-related proposal and one governance discussion recently. The proposal is about how money should be used, while the discussion is about how ENS should organize itself. So the big idea is that ENS is not just talking about technical upgrades, it is also deciding how to manage its community and resources.
+"Here is the simple version: ENS has recently been focused on a few governance topics that are bigger than everyday community chatter. The main themes are how money should be used, how decisions should be organized, and what the community should prioritize next. In simple terms, ENS is working on both its direction and its internal rules, not just small updates.
 
 Key points:
 - One recent proposal focuses on funding work inside the ENS ecosystem.
 - A governance discussion is looking at rules or structure, not just day-to-day operations.
 - These topics matter because they affect how ENS makes decisions in the future.
 
-Why it matters:
-If a DAO changes how it spends money or how it makes decisions, that can shape the whole project for a long time.
-
-Source note:
-This answer is based mainly on Degov Agent API data, plus follow-up reading of the linked governance pages when needed."
+Related links:
+- [ENS governance forum thread](https://discuss.ens.domains/)
+- [ENS Snapshot space](https://snapshot.box/#/s:ens.eth)"
 
 ## More answer examples
 
@@ -206,18 +246,18 @@ User:
 
 Good answer shape:
 
-"Here is the simple version: this week, the biggest DAO stories were mostly about spending plans, voting decisions, and rule changes. The most important updates were not random small chats. They were the kinds of decisions that can change how a DAO uses money or makes future choices.
+"Here is the simple version: this week, the biggest DAO stories were mostly about spending plans, voting decisions, and rule changes. The important updates were not random small chats. They were the kinds of decisions that can change how a DAO uses money or how the community makes future choices.
+
+In other words, the main pattern this week is that several DAOs were not just discussing ideas. They were debating actions that could shape what happens next.
 
 Key points:
 - One DAO focused on a budget or funding proposal.
 - Another DAO had a governance discussion about rules, structure, or voting.
 - A few DAOs were active, but only some updates looked important enough to matter beyond one small group.
 
-Why it matters:
-When a DAO changes its budget or decision rules, that can affect the whole project, not just one proposal.
-
-Source note:
-This summary is based mainly on Degov Agent API activity data, plus linked governance pages when needed."
+Related links:
+- [Example proposal link](https://snapshot.box/)
+- [Example governance discussion link](https://gov.uniswap.org/)"
 
 ### Example B: single DAO recent activity
 
@@ -228,16 +268,16 @@ Good answer shape:
 
 "Arbitrum has recently been focused on governance work rather than just technical development. In simple terms, that means people in the community are talking about how decisions should be made, what should get support, and what priorities matter most right now.
 
+The most important part is not just that Arbitrum is active. It is that the activity is tied to decisions that can affect the broader community.
+
 Key points:
 - There has been recent proposal or forum activity connected to Arbitrum governance.
 - The discussion is more about direction and decision-making than just routine updates.
 - The most important items are the ones that could affect funding, rules, or future planning.
 
-Why it matters:
-For a DAO like Arbitrum, governance activity helps show where the community wants the project to go next.
-
-Source note:
-This answer is based on Degov Agent API DAO brief and recent activity data, with source-link follow-up when needed."
+Related links:
+- [Arbitrum governance forum](https://forum.arbitrum.foundation/)
+- [Arbitrum Snapshot space](https://snapshot.box/)"
 
 ### Example C: explain one proposal simply
 
@@ -248,6 +288,8 @@ Good answer shape:
 
 "Yes. The simple version is that this proposal is a plan the community is being asked to approve or reject. It usually asks for one of three things: money, a rule change, or a change in project priorities.
 
+If you are new to crypto, the easiest way to think about it is this: the proposal is like a group decision document. It says what should change, and community members decide whether they agree.
+
 Key points:
 - What the proposal wants
 - Who would be affected if it passes
@@ -255,10 +297,11 @@ Key points:
 - Why critics may be unsure
 
 Why it matters:
-DAO proposals are important because they are one of the main ways a community makes real decisions.
+DAO proposals matter because this is one of the main ways a community turns discussion into an actual decision.
 
-Source note:
-This explanation should use Degov Agent API item data first, then the linked proposal page for extra context."
+Related links:
+- [Proposal page](https://snapshot.box/)
+- [Discussion thread](https://gov.uniswap.org/)"
 
 ### Example D: compare two DAOs
 
@@ -269,17 +312,17 @@ Good answer shape:
 
 "ENS and Uniswap may both be DAOs, but they can be busy with very different kinds of decisions. One may be talking more about governance structure or community coordination, while the other may be more focused on treasury use, protocol direction, or incentives.
 
+So even if both communities are active, the reason they are active may be very different.
+
 Key points:
 - What ENS has been discussing recently
 - What Uniswap has been discussing recently
 - One clear difference in focus
 - One similarity in how both communities make decisions
 
-Why it matters:
-Comparing two DAOs helps users understand that not all governance activity means the same thing.
-
-Source note:
-Use Degov Agent API activity plus DAO briefs for both DAOs, then follow source links if a comparison needs more detail."
+Related links:
+- [ENS governance forum](https://discuss.ens.domains/)
+- [Uniswap governance forum](https://gov.uniswap.org/)"
 
 ### Example E: what should I pay attention to
 
@@ -290,17 +333,17 @@ Good answer shape:
 
 "The best things to pay attention to are the updates that can actually change how a DAO works. In simple terms, that usually means budget proposals, rule changes, major votes, or discussions that could lead to new plans.
 
+You do not need to read everything. A better habit is to look for the few updates that could change money, rules, or long-term direction.
+
 Key points:
 - Look for proposals about money or treasury use.
 - Look for changes to voting rules or governance structure.
 - Look for repeated discussion around the same issue, because that can signal a bigger shift.
 - Ignore tiny updates unless they connect to a larger decision.
 
-Why it matters:
-The goal is not to read everything. The goal is to notice the few updates that can shape the project in a big way.
-
-Source note:
-Use recent Degov Agent API activity first, then linked governance pages for confirmation."
+Related links:
+- [Snapshot](https://snapshot.box/)
+- [Example governance forum](https://forum.arbitrum.foundation/)"
 
 ### Example F: when the API is not enough
 
@@ -311,14 +354,17 @@ Good answer shape:
 
 "I can explain the main issue, but the API summary alone may not be enough for the full story. To answer well, I should first use Degov Agent API to find the key proposal or forum thread, then read the linked source material to understand the arguments on both sides.
 
+That matters because the raw API result can tell us what item is important, but the linked source pages usually explain the actual disagreement in more detail.
+
 Key points:
 - Start with the API to find the important item.
 - Use the linked forum or proposal page to understand the dispute.
 - Explain both sides in simple language.
 - Tell the user clearly when the answer uses web or source-page follow-up.
 
-Source note:
-This kind of answer should usually combine Degov Agent API with linked source reading or web research."
+Related links:
+- [Forum discussion](https://gov.uniswap.org/)
+- [Proposal page](https://snapshot.box/)"
 
 ### Example G: short answer that is still useful
 
@@ -336,8 +382,9 @@ The main thing to check is:
 
 If the answer to one or more of those is yes, then it is probably worth paying attention to.
 
-Source note:
-Judge this using Degov Agent API item data first, then the linked source page if needed."
+Related links:
+- [Proposal page](https://snapshot.box/)
+- [Discussion page](https://gov.uniswap.org/)"
 
 ## Answer checklist
 
@@ -351,21 +398,6 @@ Before replying, quickly check:
 6. Did I avoid too many bullets and keep the structure easy to read?
 7. Did I clearly say whether the answer came from Degov Agent API, the web, or both?
 8. Did I avoid making up facts, dates, proposal details, or conclusions?
-
-## Commands
-
-```bash
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
-pnpm exec tsx degov-client.ts budget --usd 1
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
-pnpm exec tsx degov-client.ts brief ens
-pnpm exec tsx degov-client.ts item proposal <id>
-pnpm exec tsx degov-client.ts freshness
-pnpm exec tsx degov-client.ts health
-```
 
 ## Guardrails
 

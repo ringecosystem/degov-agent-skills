@@ -2,19 +2,23 @@
   "name": "@degov-agent-skills/dao-governance-scripts",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
-  "bin": {
-    "degov-client": "./degov-client.js"
-  },
+  "type": "module",
   "scripts": {
-    "check": "node degov-client.js help",
-    "wallet:init": "node degov-client.js wallet init",
-    "wallet:address": "node degov-client.js wallet address",
-    "wallet:balance": "node degov-client.js wallet balance"
+    "cli": "tsx degov-client.ts",
+    "check": "pnpm run typecheck && pnpm exec tsx degov-client.ts help",
+    "typecheck": "tsc --noEmit",
+    "wallet:init": "pnpm exec tsx degov-client.ts wallet init",
+    "wallet:address": "pnpm exec tsx degov-client.ts wallet address",
+    "wallet:balance": "pnpm exec tsx degov-client.ts wallet balance"
   },
   "dependencies": {
     "@x402/evm": "^2.6.0",
     "@x402/fetch": "^2.6.0",
     "viem": "^2.37.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
   }
 }

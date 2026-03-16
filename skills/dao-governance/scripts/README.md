@@ -7,23 +7,33 @@ CLI helpers for querying `degov-agent-api` with automatic x402 payments.
 ```bash
 cd skills/dao-governance/scripts
 pnpm install
-node degov-client.js wallet init
-node degov-client.js wallet address
+export DEGOV_AGENT_WALLET_PASSPHRASE="choose-a-strong-passphrase"
+pnpm exec tsx degov-client.ts wallet init
+pnpm exec tsx degov-client.ts wallet address
 ```
 
 Fund the displayed Base address with USDC, then test:
 
 ```bash
 export DEGOV_AGENT_API_BASE_URL=http://127.0.0.1:3311
-node degov-client.js wallet balance
-node degov-client.js daos
+pnpm exec tsx degov-client.ts wallet balance
+pnpm exec tsx degov-client.ts daos
 ```
 
 ## Wallet storage
 
 The generated wallet is stored outside git:
-- default: `~/.codex/memories/degov-agent-skills/dao-governance-wallet.json`
+- default: `~/.agents/state/dao-governance/wallet.json`
 - override with `DEGOV_AGENT_WALLET_PATH`
+
+New wallets are encrypted at rest. For non-interactive use, set:
+- `DEGOV_AGENT_WALLET_PASSPHRASE`
+
+The CLI still discovers the legacy `.codex` wallet path from earlier testing. To move it into the new managed location and encrypt it:
+
+```bash
+pnpm exec tsx degov-client.ts wallet migrate
+```
 
 ## Budget guide
 

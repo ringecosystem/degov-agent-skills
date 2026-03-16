@@ -13,14 +13,15 @@ This skill no longer requires users to provide a private key.
 It manages a dedicated payment wallet locally and stores it outside git.
 
 Default wallet file:
-- `~/.codex/memories/degov-agent-skills/dao-governance-wallet.json`
+- `~/.agents/state/dao-governance/wallet.json`
 
 ## Setup
 
 ```bash
 cd skills/dao-governance/scripts
 pnpm install
-node degov-client.js wallet init
+export DEGOV_AGENT_WALLET_PASSPHRASE="choose-a-strong-passphrase"
+pnpm exec tsx degov-client.ts wallet init
 ```
 
 Optional API override:
@@ -34,13 +35,13 @@ export DEGOV_AGENT_API_BASE_URL="http://127.0.0.1:3311"
 1. Initialize the local wallet:
 
 ```bash
-node degov-client.js wallet init
+pnpm exec tsx degov-client.ts wallet init
 ```
 
 2. Show the funding address:
 
 ```bash
-node degov-client.js wallet address
+pnpm exec tsx degov-client.ts wallet address
 ```
 
 3. Fund that address with USDC on Base mainnet.
@@ -48,15 +49,21 @@ node degov-client.js wallet address
 4. Check wallet balance:
 
 ```bash
-node degov-client.js wallet balance
+pnpm exec tsx degov-client.ts wallet balance
+```
+
+If you already have a legacy wallet file from earlier testing under `.codex`, migrate it into the new managed location:
+
+```bash
+pnpm exec tsx degov-client.ts wallet migrate
 ```
 
 5. Start querying the API:
 
 ```bash
-node degov-client.js daos
-node degov-client.js activity --hours 24 --limit 10
-node degov-client.js brief ens
+pnpm exec tsx degov-client.ts daos
+pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
+pnpm exec tsx degov-client.ts brief ens
 ```
 
 ## Pricing Guide
@@ -83,22 +90,24 @@ Example:
 ## Commands
 
 ```bash
-node degov-client.js wallet init
-node degov-client.js wallet address
-node degov-client.js wallet balance
-node degov-client.js budget --usd 1
-node degov-client.js daos
-node degov-client.js activity --hours 48 --limit 10
-node degov-client.js brief ens
-node degov-client.js item proposal <id>
-node degov-client.js freshness
-node degov-client.js health
+pnpm exec tsx degov-client.ts wallet init
+pnpm exec tsx degov-client.ts wallet migrate
+pnpm exec tsx degov-client.ts wallet address
+pnpm exec tsx degov-client.ts wallet balance
+pnpm exec tsx degov-client.ts budget --usd 1
+pnpm exec tsx degov-client.ts daos
+pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
+pnpm exec tsx degov-client.ts brief ens
+pnpm exec tsx degov-client.ts item proposal <id>
+pnpm exec tsx degov-client.ts freshness
+pnpm exec tsx degov-client.ts health
 ```
 
 ## Guardrails
 
 - Do not ask users to paste private keys.
 - Use the local managed wallet for API payments.
+- Require a wallet passphrase for encrypted local storage.
 - If the wallet is unfunded, instruct the user to fund the displayed address on Base with USDC.
 - State when information came from Degov Agent API versus the web.
 - Do not fabricate governance activity, proposals, or dates.

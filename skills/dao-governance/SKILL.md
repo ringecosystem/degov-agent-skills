@@ -5,93 +5,44 @@ description: Use when users ask DAO research questions. Answer with Degov Agent 
 
 # DAO Governance Skill
 
-Use this skill to answer DAO governance questions with Degov Agent API data as the primary source.
-
-## What Changed
-
-This skill no longer requires users to provide a private key.
-It manages a dedicated payment wallet locally and stores it outside git.
-
-Default wallet file:
-- `~/.agents/state/dao-governance/wallet.json`
+Use this skill to answer DAO governance questions with Degov Agent API data first, then fall back to web search only when API coverage is insufficient.
 
 ## Setup
+
+Default managed wallet path:
+- `~/.agents/state/dao-governance/wallet.json`
+
+Initialize the local wallet:
 
 ```bash
 cd skills/dao-governance/scripts
 pnpm install
 export DEGOV_AGENT_WALLET_PASSPHRASE="choose-a-strong-passphrase"
 pnpm exec tsx degov-client.ts wallet init
+pnpm exec tsx degov-client.ts wallet address
 ```
+
+Then fund that Base address with USDC.
 
 Optional API override:
 
 ```bash
-export DEGOV_AGENT_API_BASE_URL="http://127.0.0.1:3311"
+export DEGOV_AGENT_API_BASE_URL="http://127.0.0.1:3310"
 ```
 
-## Wallet Flow
+## Research workflow
 
-1. Initialize the local wallet:
-
-```bash
-pnpm exec tsx degov-client.ts wallet init
-```
-
-2. Show the funding address:
-
-```bash
-pnpm exec tsx degov-client.ts wallet address
-```
-
-3. Fund that address with USDC on Base mainnet.
-
-4. Check wallet balance:
-
-```bash
-pnpm exec tsx degov-client.ts wallet balance
-```
-
-If you already have a legacy wallet file from earlier testing under `.codex`, migrate it into the new managed location:
-
-```bash
-pnpm exec tsx degov-client.ts wallet migrate
-```
-
-5. Start querying the API:
-
-```bash
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
-pnpm exec tsx degov-client.ts brief ens
-```
-
-## Pricing Guide
-
-Approximate request budget per 1 USDC:
-- `GET /v1/daos`: 200 requests
-- `GET /v1/activity`: 200 requests
-- `GET /v1/system/freshness`: 200 requests
-- `GET /v1/daos/:daoId/brief`: 50 requests
-- `GET /v1/items/:kind/:externalId`: 50 requests
-
-Example:
-- 1 DAO list + 5 activity queries + 10 DAO briefs costs about `0.23 USDC`
-
-## Data Workflow
-
-1. Check API health with `/health` if needed.
-2. Use `/v1/daos` to discover DAO coverage.
-3. Use `/v1/activity` for recent cross-DAO activity.
-4. Use `/v1/daos/:daoId/brief` for compact DAO context.
-5. Use `/v1/items/:kind/:externalId` only for items you plan to cite.
-6. Fall back to web search only when API coverage is weak or stale.
+1. Use `health` if you need to confirm the backend is up.
+2. Use `daos` to discover DAO coverage.
+3. Use `activity` for recent multi-DAO governance activity.
+4. Use `brief <dao-id>` for compact DAO context.
+5. Use `item <proposal|forum_topic> <external-id>` only when you need item-level detail.
+6. Use web search only when the API is stale, incomplete, or unavailable.
 
 ## Commands
 
 ```bash
 pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet migrate
 pnpm exec tsx degov-client.ts wallet address
 pnpm exec tsx degov-client.ts wallet balance
 pnpm exec tsx degov-client.ts budget --usd 1

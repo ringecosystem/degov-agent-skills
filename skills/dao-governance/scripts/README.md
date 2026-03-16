@@ -40,12 +40,8 @@ pnpm exec tsx degov-client.ts wallet migrate
 >>>>>>> f76e1bf (refactor: move dao governance client to typescript)
 ## Budget guide
 
-Per 1 USDC:
-- `daos`: about 200 requests
-- `activity`: about 200 requests
-- `freshness`: about 200 requests
-- `brief`: about 50 requests
-- `item`: about 50 requests
+`budget --usd ...` fetches live pricing from `degov-agent-api`.
+If the pricing metadata endpoint is unavailable, the CLI falls back to the current default pricing table.
 
 ## Commands
 

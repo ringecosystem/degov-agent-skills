@@ -59,6 +59,7 @@ pnpm exec tsx degov-client.ts health
 - Do not ask users to paste private keys.
 - Use the local managed wallet for API payments.
 - Require a wallet passphrase for encrypted local storage.
+- Use `budget` when you need the current API pricing table.
 - If the wallet is unfunded, instruct the user to fund the displayed address on Base with USDC.
 - State when information came from Degov Agent API versus the web.
 - Do not fabricate governance activity, proposals, or dates.

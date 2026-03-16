@@ -18,7 +18,7 @@ import {
 
 const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'http://127.0.0.1:3310';
 
-const PRICES = {
+const FALLBACK_PRICES = {
   daos: 0.005,
   activity: 0.005,
   freshness: 0.005,
@@ -27,6 +27,15 @@ const PRICES = {
 } as const;
 
 const ITEM_KINDS = new Set(['proposal', 'forum_topic']);
+
+interface PricingResponse {
+  request: { endpoint: string };
+  pricing: {
+    token: string;
+    network: string;
+    entries: Record<keyof typeof FALLBACK_PRICES, { price: string }>;
+  };
+}
 
 interface ParsedArgs {
   _: string[];
@@ -114,18 +123,57 @@ function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
 }
 
-function printBudget(amountUsd: string): void {
+async function getPricing(): Promise<{
+  prices: Record<keyof typeof FALLBACK_PRICES, number>;
+  source: 'live' | 'fallback';
+  token: string;
+  network: string;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/meta/pricing`);
+    if (!response.ok) {
+      throw new Error(`pricing metadata returned ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PricingResponse;
+    return {
+      prices: {
+        daos: Number(payload.pricing.entries.daos.price),
+        activity: Number(payload.pricing.entries.activity.price),
+        freshness: Number(payload.pricing.entries.freshness.price),
+        brief: Number(payload.pricing.entries.brief.price),
+        item: Number(payload.pricing.entries.item.price),
+      },
+      source: 'live',
+      token: payload.pricing.token,
+      network: payload.pricing.network,
+    };
+  } catch {
+    return {
+      prices: { ...FALLBACK_PRICES },
+      source: 'fallback',
+      token: 'usdc',
+      network: 'base',
+    };
+  }
+}
+
+async function printBudget(amountUsd: string): Promise<void> {
   const amount = Number(amountUsd);
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error('Budget amount must be a positive number.');
   }
 
+  const pricing = await getPricing();
   const requests = Object.fromEntries(
-    Object.entries(PRICES).map(([key, price]) => [key, Math.floor(amount / price)])
+    Object.entries(pricing.prices).map(([key, price]) => [key, Math.floor(amount / price)])
   );
 
   printJson({
+    network: pricing.network,
     requests,
+    source: pricing.source,
+    token: pricing.token,
     usd: amount,
   });
 }
@@ -199,7 +247,7 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
   },
 
   async budget(args) {
-    printBudget(getArgValue(args, '--usd') || '1');
+    await printBudget(getArgValue(args, '--usd') || '1');
   },
 
   async daos() {
@@ -294,7 +342,7 @@ Commands:
 >>>>>>> f76e1bf (refactor: move dao governance client to typescript)
   wallet address                show wallet address and path
   wallet balance                show Base USDC balance
-  budget --usd 1                estimate requests per dollar
+  budget --usd 1                estimate requests using live API pricing
   daos                          list DAOs
   activity [--dao ens] [--hours 24] [--limit 10] [--types proposal,forum_topic] [--governance]
   brief <dao-id> [--activity-limit 6]

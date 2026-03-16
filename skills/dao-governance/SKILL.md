@@ -1,7 +1,8 @@
 ---
 name: dao-governance
-version: 0.3.0
 description: Use when users ask DAO research questions. Answer with Degov Agent API data first, then use web search when API coverage is insufficient.
+metadata:
+  version: 0.3.0
 ---
 
 # DAO Governance Skill

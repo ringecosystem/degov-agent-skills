@@ -23,6 +23,8 @@ const FALLBACK_PRICES = {
 } as const;
 
 const ITEM_KINDS = new Set(['proposal', 'forum_topic']);
+const YELLOW = process.stdout.isTTY ? '\x1b[33m' : '';
+const RESET = process.stdout.isTTY ? '\x1b[0m' : '';
 
 interface PricingResponse {
   request: { endpoint: string };
@@ -31,6 +33,13 @@ interface PricingResponse {
     network: string;
     entries: Record<keyof typeof FALLBACK_PRICES, { price: string }>;
   };
+}
+
+interface PricingInfo {
+  prices: Record<keyof typeof FALLBACK_PRICES, number>;
+  source: 'live' | 'fallback';
+  token: string;
+  network: string;
 }
 
 interface ParsedArgs {
@@ -119,12 +128,38 @@ function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
 }
 
-async function getPricing(): Promise<{
-  prices: Record<keyof typeof FALLBACK_PRICES, number>;
-  source: 'live' | 'fallback';
-  token: string;
-  network: string;
-}> {
+function getBudgetRecommendation(requests: Record<keyof typeof FALLBACK_PRICES, number>): string[] {
+  const lowCostCapacity = Math.min(requests.daos, requests.activity, requests.freshness);
+  const detailCapacity = Math.min(requests.brief, requests.item);
+
+  if (lowCostCapacity < 20 || detailCapacity < 5) {
+    return [
+      'Recommendation: this is a very small budget. Use it for a few quick checks only.',
+      'Good fit: test one DAO, open a few recent activity items, then stop and review the results.',
+    ];
+  }
+
+  if (lowCostCapacity < 100 || detailCapacity < 20) {
+    return [
+      'Recommendation: this is a light testing budget.',
+      'Good fit: explore one or two DAOs and inspect a small number of detail pages.',
+    ];
+  }
+
+  if (lowCostCapacity < 300 || detailCapacity < 60) {
+    return [
+      'Recommendation: this is a solid everyday research budget.',
+      'Good fit: compare several DAOs, review recent activity, and open a moderate number of detail pages.',
+    ];
+  }
+
+  return [
+    'Recommendation: this is a large research budget.',
+    'Good fit: multi-DAO scans, repeated follow-up checks, and deeper proposal or forum review over time.',
+  ];
+}
+
+async function getPricing(): Promise<PricingInfo> {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/meta/pricing`);
     if (!response.ok) {
@@ -154,6 +189,39 @@ async function getPricing(): Promise<{
   }
 }
 
+function formatUsdAmount(value: number): string {
+  if (value >= 1) {
+    return value.toFixed(2).replace(/\.00$/, '');
+  }
+  if (value >= 0.1) {
+    return value.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  }
+  return value.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function getFundingRecommendations(pricing: PricingInfo): string[] {
+  const priceValues = Object.values(pricing.prices);
+  const minPrice = Math.min(...priceValues);
+  const maxPrice = Math.max(...priceValues);
+
+  const bands = [
+    { label: 'light usage (1-10 calls/day)', minCalls: 1, maxCalls: 10 },
+    { label: 'moderate usage (10-100 calls/day)', minCalls: 10, maxCalls: 100 },
+    { label: 'heavy usage (100+ calls/day)', minCalls: 100, maxCalls: 250 },
+  ];
+
+  return bands.map((band) => {
+    const monthlyMin = band.minCalls * minPrice * 30;
+    const monthlyMax = band.maxCalls * maxPrice * 30;
+    const range =
+      band.label === 'heavy usage (100+ calls/day)'
+        ? `${formatUsdAmount(monthlyMin)}+ ${pricing.token}`
+        : `${formatUsdAmount(monthlyMin)}-${formatUsdAmount(monthlyMax)} ${pricing.token}`;
+
+    return `- For ${band.label}, a rough 30-day budget is ${range}.`;
+  });
+}
+
 async function printBudget(amountUsd: string): Promise<void> {
   const amount = Number(amountUsd);
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -163,7 +231,7 @@ async function printBudget(amountUsd: string): Promise<void> {
   const pricing = await getPricing();
   const requests = Object.fromEntries(
     Object.entries(pricing.prices).map(([key, price]) => [key, Math.floor(amount / price)])
-  );
+  ) as Record<keyof typeof FALLBACK_PRICES, number>;
 
   printJson({
     network: pricing.network,
@@ -172,6 +240,11 @@ async function printBudget(amountUsd: string): Promise<void> {
     token: pricing.token,
     usd: amount,
   });
+
+  console.log('');
+  for (const line of getBudgetRecommendation(requests)) {
+    console.log(line);
+  }
 }
 
 const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
@@ -180,13 +253,29 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
 
     if (subcommand === 'init') {
       const result = await initWallet();
+      const pricing = await getPricing();
       console.log(result.created ? 'Created payment wallet.' : 'Wallet already exists.');
       printJson({
         address: result.address,
         encrypted: result.encrypted,
         walletPath: result.walletPath,
       });
-      console.log('Fund this Base address with USDC before making paid API calls.');
+      console.log('');
+      console.log(
+        `${YELLOW}This wallet is used only to pay small x402 fees when the skill calls degov-agent-api.${RESET}`
+      );
+      console.log(
+        `${YELLOW}It helps keep API payments separate from your main wallet, fund this Base address with a small amount of USDC for paid API calls.${RESET}`
+      );
+      console.log('');
+      console.log('The recommended amount depends on your expected usage:');
+      console.log('');
+      for (const line of getFundingRecommendations(pricing)) {
+        console.log(line);
+      }
+      console.log('');
+      console.log(`${YELLOW}Do not transfer large amounts of money to this wallet.${RESET}`);
+      console.log(`${YELLOW}A small testing balance is the safer default.${RESET}`);
       return;
     }
 

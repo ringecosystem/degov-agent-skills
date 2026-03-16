@@ -64,6 +64,19 @@ pnpm exec tsx degov-client.ts freshness
 pnpm exec tsx degov-client.ts health
 ```
 
+## Free and paid APIs
+
+Free:
+- `GET /health`
+- `GET /v1/meta/pricing`
+- `GET /v1/daos`
+
+Paid:
+- `GET /v1/activity`
+- `GET /v1/daos/:daoId/brief`
+- `GET /v1/items/:kind/:externalId`
+- `GET /v1/system/freshness`
+
 ## Stardard workflow for answering questions
 
 This section describes the best practices for answering user questions about DAO governance.

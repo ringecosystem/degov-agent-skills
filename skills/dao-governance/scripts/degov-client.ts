@@ -31,16 +31,18 @@ interface PricingResponse {
   pricing: {
     token: string;
     network: string;
-    entries: Record<keyof typeof FALLBACK_PRICES, { price: string }>;
+    entries: Record<keyof typeof FALLBACK_PRICES, { price: string | null; paid: boolean }>;
   };
 }
 
 interface PricingInfo {
-  prices: Record<keyof typeof FALLBACK_PRICES, number>;
+  prices: Record<keyof typeof FALLBACK_PRICES, number | null>;
   source: 'live' | 'fallback';
   token: string;
   network: string;
 }
+
+type BudgetDisplayRequests = Record<keyof typeof FALLBACK_PRICES, number | 'free'>;
 
 interface ParsedArgs {
   _: string[];
@@ -169,7 +171,7 @@ async function getPricing(): Promise<PricingInfo> {
     const payload = (await response.json()) as PricingResponse;
     return {
       prices: {
-        daos: Number(payload.pricing.entries.daos.price),
+        daos: payload.pricing.entries.daos.paid ? Number(payload.pricing.entries.daos.price) : null,
         activity: Number(payload.pricing.entries.activity.price),
         freshness: Number(payload.pricing.entries.freshness.price),
         brief: Number(payload.pricing.entries.brief.price),
@@ -200,7 +202,7 @@ function formatUsdAmount(value: number): string {
 }
 
 function getFundingRecommendations(pricing: PricingInfo): string[] {
-  const priceValues = Object.values(pricing.prices);
+  const priceValues = Object.values(pricing.prices).filter((value): value is number => value !== null);
   const minPrice = Math.min(...priceValues);
   const maxPrice = Math.max(...priceValues);
 
@@ -230,8 +232,19 @@ async function printBudget(amountUsd: string): Promise<void> {
 
   const pricing = await getPricing();
   const requests = Object.fromEntries(
-    Object.entries(pricing.prices).map(([key, price]) => [key, Math.floor(amount / price)])
-  ) as Record<keyof typeof FALLBACK_PRICES, number>;
+    Object.entries(pricing.prices).map(([key, price]) => [
+      key,
+      price === null ? 'free' : Math.floor(amount / price),
+    ])
+  ) as BudgetDisplayRequests;
+
+  const recommendationRequests = {
+    daos: typeof requests.daos === 'number' ? requests.daos : Number.MAX_SAFE_INTEGER,
+    activity: typeof requests.activity === 'number' ? requests.activity : Number.MAX_SAFE_INTEGER,
+    freshness: typeof requests.freshness === 'number' ? requests.freshness : Number.MAX_SAFE_INTEGER,
+    brief: typeof requests.brief === 'number' ? requests.brief : Number.MAX_SAFE_INTEGER,
+    item: typeof requests.item === 'number' ? requests.item : Number.MAX_SAFE_INTEGER,
+  };
 
   printJson({
     network: pricing.network,
@@ -242,7 +255,7 @@ async function printBudget(amountUsd: string): Promise<void> {
   });
 
   console.log('');
-  for (const line of getBudgetRecommendation(requests)) {
+  for (const line of getBudgetRecommendation(recommendationRequests)) {
     console.log(line);
   }
 }
@@ -400,7 +413,7 @@ Commands:
   wallet address                show wallet address and path
   wallet balance                show Base USDC balance
   budget --usd 1                estimate requests using live API pricing
-  daos                          list DAOs
+  daos                          list DAOs (free)
   activity [--dao ens] [--hours 24] [--limit 10] [--types proposal,forum_topic] [--governance]
   brief <dao-id> [--activity-limit 6]
   item <proposal|forum_topic> <external-id>

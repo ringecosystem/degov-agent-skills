@@ -20,6 +20,19 @@ pnpm exec tsx degov-client.ts wallet balance
 pnpm exec tsx degov-client.ts daos
 ```
 
+## Free and paid APIs
+
+Free:
+- `GET /health`
+- `GET /v1/meta/pricing`
+- `GET /v1/daos`
+
+Paid:
+- `GET /v1/activity`
+- `GET /v1/daos/:daoId/brief`
+- `GET /v1/items/:kind/:externalId`
+- `GET /v1/system/freshness`
+
 ## Wallet storage
 
 The generated wallet is stored outside git:

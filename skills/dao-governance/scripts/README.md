@@ -28,16 +28,6 @@ The generated wallet is stored outside git:
 
 New wallets are encrypted at rest. For non-interactive use, set:
 - `DEGOV_AGENT_WALLET_PASSPHRASE`
-
-<<<<<<< HEAD
-The CLI still discovers the legacy `.codex` wallet path from earlier testing. To move it into the new managed location and encrypt it:
-
-```bash
-pnpm exec tsx degov-client.ts wallet migrate
-```
-
-=======
->>>>>>> f76e1bf (refactor: move dao governance client to typescript)
 ## Budget guide
 
 `budget --usd ...` fetches live pricing from `degov-agent-api`.

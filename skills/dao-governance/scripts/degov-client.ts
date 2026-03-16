@@ -10,10 +10,6 @@ import {
   getResolvedWalletPath,
   getUsdcBalance,
   initWallet,
-<<<<<<< HEAD
-  migrateWallet,
-=======
->>>>>>> f76e1bf (refactor: move dao governance client to typescript)
 } from './wallet-store.js';
 
 const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'http://127.0.0.1:3310';
@@ -194,26 +190,6 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
       return;
     }
 
-<<<<<<< HEAD
-    if (subcommand === 'migrate') {
-      const result = await migrateWallet();
-      console.log(
-        result.migrated
-          ? 'Migrated wallet to the managed storage path.'
-          : 'Wallet already uses managed encrypted storage.'
-      );
-      printJson({
-        address: result.address,
-        encrypted: result.encrypted,
-        moved: result.moved,
-        sourceWalletPath: result.sourceWalletPath,
-        walletPath: result.walletPath,
-      });
-      return;
-    }
-
-=======
->>>>>>> f76e1bf (refactor: move dao governance client to typescript)
     if (subcommand === 'address') {
       const { account, walletPath, wallet } = await getAccount();
       printJson({
@@ -239,11 +215,7 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
       return;
     }
 
-<<<<<<< HEAD
-    throw new Error('Usage: pnpm exec tsx degov-client.ts wallet <init|migrate|address|balance>');
-=======
     throw new Error('Usage: pnpm exec tsx degov-client.ts wallet <init|address|balance>');
->>>>>>> f76e1bf (refactor: move dao governance client to typescript)
   },
 
   async budget(args) {
@@ -336,10 +308,6 @@ Environment:
 
 Commands:
   wallet init                   create or reuse local payment wallet
-<<<<<<< HEAD
-  wallet migrate                migrate legacy wallet into ~/.agents/state/dao-governance
-=======
->>>>>>> f76e1bf (refactor: move dao governance client to typescript)
   wallet address                show wallet address and path
   wallet balance                show Base USDC balance
   budget --usd 1                estimate requests using live API pricing

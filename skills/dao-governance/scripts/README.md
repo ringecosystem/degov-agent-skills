@@ -23,11 +23,13 @@ pnpm exec tsx degov-client.ts daos
 ## Free and paid APIs
 
 Free:
+
 - `GET /health`
 - `GET /v1/meta/pricing`
 - `GET /v1/daos`
 
 Paid:
+
 - `GET /v1/activity`
 - `GET /v1/daos/:daoId/brief`
 - `GET /v1/items/:kind/:externalId`
@@ -36,11 +38,14 @@ Paid:
 ## Wallet storage
 
 The generated wallet is stored outside git:
+
 - default: `~/.agents/state/dao-governance/wallet.json`
 - override with `DEGOV_AGENT_WALLET_PATH`
 
 New wallets are encrypted at rest. For non-interactive use, set:
+
 - `DEGOV_AGENT_WALLET_PASSPHRASE`
+
 ## Budget guide
 
 `budget --usd ...` fetches live pricing from `degov-agent-api`.

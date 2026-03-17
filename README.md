@@ -10,6 +10,7 @@ External home for Degov agent skills.
 ## Current skill behavior
 
 The `dao-governance` skill:
+
 - uses `degov-agent-api` as the primary evidence source
 - pays for `/v1/*` requests with x402 on Base mainnet USDC
 - creates a dedicated local wallet instead of asking users for a raw private key

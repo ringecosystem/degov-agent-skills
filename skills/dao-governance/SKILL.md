@@ -33,15 +33,16 @@ export DEGOV_AGENT_WALLET_PASSPHRASE="choose-a-strong-passphrase"
 pnpm exec tsx degov-client.ts wallet init
 pnpm exec tsx degov-client.ts wallet address
 ```
+
 Then fund that Base address with some USDC, according to your expected usage. You can then check the balance with:
 
 ```bash
 pnpm exec tsx degov-client.ts wallet balance
 ```
 
-If you see the balance, you are ready to use the full capabilities of the API. 
+If you see the balance, you are ready to use the full capabilities of the API.
 
-Note: The wallet data is stored locally in an encrypted file. Do not share that file or the passphrase with anyone. The default path for the wallet file is `~/.agents/state/dao-governance/wallet.json`. 
+Note: The wallet data is stored locally in an encrypted file. Do not share that file or the passphrase with anyone. The default path for the wallet file is `~/.agents/state/dao-governance/wallet.json`.
 
 ## Available commands
 
@@ -67,11 +68,13 @@ pnpm exec tsx degov-client.ts health
 ## Free and paid APIs
 
 Free:
+
 - `GET /health`
 - `GET /v1/meta/pricing`
 - `GET /v1/daos`
 
 Paid:
+
 - `GET /v1/activity`
 - `GET /v1/daos/:daoId/brief`
 - `GET /v1/items/:kind/:externalId`
@@ -87,11 +90,13 @@ Users often ask broad or fuzzy questions.
 Do not answer too early.
 
 First decide:
+
 - which DAO or DAO family the user is probably asking about
 - whether they want discovery, recent activity, a DAO summary, or one specific item
 - what time range is implied
 
 Examples:
+
 - "What has Spark been doing lately?"
   Infer DAO: `spark`
   Likely endpoints: `brief spark`, `activity --dao spark`, maybe `freshness`
@@ -107,6 +112,7 @@ Examples:
 ### Endpoint selection rules
 
 Use the API intentionally:
+
 - `daos`: discover which DAOs exist in coverage
 - `activity`: scan recent actions across one DAO or many DAOs
 - `brief <dao-id>`: get compact context before writing the answer
@@ -116,6 +122,7 @@ Use the API intentionally:
 ### Batch retrieval rule
 
 When a question needs more than one API call:
+
 - decide the query plan first
 - run the needed API calls as a batch
 - collect all results
@@ -129,11 +136,13 @@ Degov Agent API is the first layer, not the last layer.
 Its results often include source URLs.
 
 When those URLs are important to the answer:
+
 - open or search the linked forum/proposal materials
 - confirm the meaning of the proposal or discussion
 - use the source text to improve the explanation
 
 If the API results are missing, stale, or too shallow:
+
 - use web search
 - prefer official DAO forums, Snapshot pages, governance portals, and official announcements
 - say clearly when you are using the web in addition to Degov Agent API
@@ -144,17 +153,20 @@ The API is a data source, not the final user experience.
 Do not give users raw JSON unless they explicitly ask for it.
 
 Write as if the user is a middle school student:
+
 - use simple words
 - explain DAO and governance ideas in plain language
 - avoid dense technical wording unless needed
 - when you must use a technical term, explain it in one short sentence
 
 Make the answer detailed enough to be useful:
+
 - one-line answers are not acceptable
 - explain what happened, why it matters, and which DAO it affects
 - include timeframe when relevant
 
 Use bullets carefully:
+
 - bullets are good for listing proposals, actions, or takeaways
 - do not turn the whole answer into a long wall of bullets
 - prefer a short opening paragraph, then a few clear bullets, then a short wrap-up if helpful
@@ -169,24 +181,28 @@ For normal research questions, aim for this structure:
 4. A `Related links` section with the key source URLs users may want to open.
 
 Summary rules:
+
 - minimum: one full paragraph
 - it may be more than one paragraph when the topic needs it
 - keep the language simple
 - if you refer to outside materials while explaining, show those references as clickable markdown links
 
 Link rules:
+
 - do not add a generic `Source note`
 - instead, show the most useful URLs directly
 - prefer official forum threads, proposal pages, Snapshot links, and official announcements
 - keep the link list short and relevant
 
 Good example qualities:
+
 - easy to read
 - not too short
 - not overloaded with bullets
 - clear enough for a younger student to follow
 
 Avoid:
+
 - raw API payload dumps
 - unexplained abbreviations
 - overly dry or robotic wording
@@ -202,6 +218,7 @@ User:
 "What are the most important DAO governance updates this week?"
 
 Good workflow:
+
 1. Treat this as a multi-DAO request.
 2. Query `activity` for the last 7 days.
 3. Identify the most active or important DAOs from that result.
@@ -215,6 +232,7 @@ User:
 "What has ENS been doing recently?"
 
 Good workflow:
+
 1. Infer the DAO is `ens`.
 2. Query `activity --dao ens`.
 3. Query `brief ens`.
@@ -227,6 +245,7 @@ User:
 "Can you explain proposal X to me?"
 
 Good workflow:
+
 1. Find the item ID or infer it from recent DAO activity.
 2. Query `item`.
 3. Read linked source material if the API summary is too thin.
@@ -243,11 +262,13 @@ Example:
 "Here is the simple version: ENS has recently been focused on a few governance topics that are bigger than everyday community chatter. The main themes are how money should be used, how decisions should be organized, and what the community should prioritize next. In simple terms, ENS is working on both its direction and its internal rules, not just small updates.
 
 Key points:
+
 - One recent proposal focuses on funding work inside the ENS ecosystem.
 - A governance discussion is looking at rules or structure, not just day-to-day operations.
 - These topics matter because they affect how ENS makes decisions in the future.
 
 Related links:
+
 - [ENS governance forum thread](https://discuss.ens.domains/)
 - [ENS Snapshot space](https://snapshot.box/#/s:ens.eth)"
 
@@ -265,11 +286,13 @@ Good answer shape:
 In other words, the main pattern this week is that several DAOs were not just discussing ideas. They were debating actions that could shape what happens next.
 
 Key points:
+
 - One DAO focused on a budget or funding proposal.
 - Another DAO had a governance discussion about rules, structure, or voting.
 - A few DAOs were active, but only some updates looked important enough to matter beyond one small group.
 
 Related links:
+
 - [Example proposal link](https://snapshot.box/)
 - [Example governance discussion link](https://gov.uniswap.org/)"
 
@@ -285,11 +308,13 @@ Good answer shape:
 The most important part is not just that Arbitrum is active. It is that the activity is tied to decisions that can affect the broader community.
 
 Key points:
+
 - There has been recent proposal or forum activity connected to Arbitrum governance.
 - The discussion is more about direction and decision-making than just routine updates.
 - The most important items are the ones that could affect funding, rules, or future planning.
 
 Related links:
+
 - [Arbitrum governance forum](https://forum.arbitrum.foundation/)
 - [Arbitrum Snapshot space](https://snapshot.box/)"
 
@@ -305,6 +330,7 @@ Good answer shape:
 If you are new to crypto, the easiest way to think about it is this: the proposal is like a group decision document. It says what should change, and community members decide whether they agree.
 
 Key points:
+
 - What the proposal wants
 - Who would be affected if it passes
 - Why supporters think it is useful
@@ -314,6 +340,7 @@ Why it matters:
 DAO proposals matter because this is one of the main ways a community turns discussion into an actual decision.
 
 Related links:
+
 - [Proposal page](https://snapshot.box/)
 - [Discussion thread](https://gov.uniswap.org/)"
 
@@ -329,12 +356,14 @@ Good answer shape:
 So even if both communities are active, the reason they are active may be very different.
 
 Key points:
+
 - What ENS has been discussing recently
 - What Uniswap has been discussing recently
 - One clear difference in focus
 - One similarity in how both communities make decisions
 
 Related links:
+
 - [ENS governance forum](https://discuss.ens.domains/)
 - [Uniswap governance forum](https://gov.uniswap.org/)"
 
@@ -350,12 +379,14 @@ Good answer shape:
 You do not need to read everything. A better habit is to look for the few updates that could change money, rules, or long-term direction.
 
 Key points:
+
 - Look for proposals about money or treasury use.
 - Look for changes to voting rules or governance structure.
 - Look for repeated discussion around the same issue, because that can signal a bigger shift.
 - Ignore tiny updates unless they connect to a larger decision.
 
 Related links:
+
 - [Snapshot](https://snapshot.box/)
 - [Example governance forum](https://forum.arbitrum.foundation/)"
 
@@ -371,12 +402,14 @@ Good answer shape:
 That matters because the raw API result can tell us what item is important, but the linked source pages usually explain the actual disagreement in more detail.
 
 Key points:
+
 - Start with the API to find the important item.
 - Use the linked forum or proposal page to understand the dispute.
 - Explain both sides in simple language.
 - Tell the user clearly when the answer uses web or source-page follow-up.
 
 Related links:
+
 - [Forum discussion](https://gov.uniswap.org/)
 - [Proposal page](https://snapshot.box/)"
 
@@ -390,6 +423,7 @@ Good answer shape:
 "Yes, it looks important if it changes money, voting rules, or long-term project direction. A proposal is usually less important if it only covers a small operational detail.
 
 The main thing to check is:
+
 - does it change spending
 - does it change governance rules
 - does it affect many community members
@@ -397,6 +431,7 @@ The main thing to check is:
 If the answer to one or more of those is yes, then it is probably worth paying attention to.
 
 Related links:
+
 - [Proposal page](https://snapshot.box/)
 - [Discussion page](https://gov.uniswap.org/)"
 

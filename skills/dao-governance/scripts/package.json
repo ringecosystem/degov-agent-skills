@@ -6,6 +6,8 @@
   "scripts": {
     "cli": "tsx degov-client.ts",
     "check": "pnpm run typecheck && pnpm exec tsx degov-client.ts help",
+    "format": "prettier --write \"../../../README.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
+    "format:check": "prettier --check \"../../../README.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
     "typecheck": "tsc --noEmit",
     "wallet:init": "pnpm exec tsx degov-client.ts wallet init",
     "wallet:address": "pnpm exec tsx degov-client.ts wallet address",
@@ -18,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "prettier": "^3.6.2",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2"
   }

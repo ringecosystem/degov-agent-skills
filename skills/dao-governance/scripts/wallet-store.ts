@@ -92,9 +92,7 @@ function normalizeWalletPermissions(walletPath: string): void {
 
 async function promptPassphrase(promptLabel: string): Promise<string> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error(
-      'Wallet passphrase required. Set DEGOV_AGENT_WALLET_PASSPHRASE for non-interactive use.'
-    );
+    throw new Error('Wallet passphrase required. Set DEGOV_AGENT_WALLET_PASSPHRASE for non-interactive use.');
   }
 
   const rl = createInterface({
@@ -168,7 +166,9 @@ function decryptPrivateKey(cryptoPayload: EncryptedWalletPayload, passphrase: st
 
 function writeWalletFile(walletPath: string, payload: WalletFile): void {
   ensureWalletDir(walletPath);
-  fs.writeFileSync(walletPath, `${JSON.stringify(payload, null, 2)}\n`, { mode: WALLET_FILE_MODE });
+  fs.writeFileSync(walletPath, `${JSON.stringify(payload, null, 2)}\n`, {
+    mode: WALLET_FILE_MODE,
+  });
   normalizeWalletPermissions(walletPath);
 }
 

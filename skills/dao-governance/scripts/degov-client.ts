@@ -4,13 +4,7 @@ import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
 import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import {
-  DEFAULT_WALLET_PATH,
-  getAccount,
-  getResolvedWalletPath,
-  getUsdcBalance,
-  initWallet,
-} from './wallet-store.js';
+import { DEFAULT_WALLET_PATH, getAccount, getResolvedWalletPath, getUsdcBalance, initWallet } from './wallet-store.js';
 
 const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'http://127.0.0.1:3310';
 
@@ -232,10 +226,7 @@ async function printBudget(amountUsd: string): Promise<void> {
 
   const pricing = await getPricing();
   const requests = Object.fromEntries(
-    Object.entries(pricing.prices).map(([key, price]) => [
-      key,
-      price === null ? 'free' : Math.floor(amount / price),
-    ])
+    Object.entries(pricing.prices).map(([key, price]) => [key, price === null ? 'free' : Math.floor(amount / price)])
   ) as BudgetDisplayRequests;
 
   const recommendationRequests = {
@@ -367,9 +358,7 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
     const externalId = args._[1];
 
     if (!kind || !externalId) {
-      throw new Error(
-        'Usage: pnpm exec tsx degov-client.ts item <proposal|forum_topic> <external-id>'
-      );
+      throw new Error('Usage: pnpm exec tsx degov-client.ts item <proposal|forum_topic> <external-id>');
     }
 
     if (!ITEM_KINDS.has(kind)) {

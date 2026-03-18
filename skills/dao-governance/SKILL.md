@@ -37,6 +37,8 @@ pnpm exec tsx degov-client.ts wallet address
 
 Both `wallet init` and `wallet address` show the Base wallet address together with suggested top-up ranges based on live API pricing, so users can estimate a small recharge amount before funding.
 
+Successful paid API calls also show the settlement transaction hash and clickable Base explorer links, so users can inspect the payment onchain if needed.
+
 Then fund that Base address with some USDC, according to your expected usage. You can then check the balance with:
 
 ```bash

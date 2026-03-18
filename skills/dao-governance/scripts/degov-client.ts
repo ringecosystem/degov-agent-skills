@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
-import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
+import { decodePaymentResponseHeader, wrapFetchWithPaymentFromConfig } from '@x402/fetch';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { DEFAULT_WALLET_PATH, getAccount, getResolvedWalletPath, getUsdcBalance, initWallet } from './wallet-store.js';
@@ -41,6 +41,12 @@ type BudgetDisplayRequests = Record<keyof typeof FALLBACK_PRICES, number | 'free
 interface ParsedArgs {
   _: string[];
   [key: string]: string | boolean | string[];
+}
+
+interface PaymentSettlementInfo {
+  payer?: string;
+  transaction?: string;
+  network?: string;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -103,6 +109,7 @@ async function apiCall(endpoint: string): Promise<unknown> {
   console.error(`Calling: ${url}`);
 
   const response = await fetchWithPayment(url);
+  const paymentResponse = response.headers.get('PAYMENT-RESPONSE');
   const text = await response.text();
 
   let payload: unknown = text;
@@ -116,6 +123,8 @@ async function apiCall(endpoint: string): Promise<unknown> {
     const detail = typeof payload === 'string' ? payload : JSON.stringify(payload);
     throw new Error(`API error ${response.status}: ${detail}`);
   }
+
+  printPaymentSettlement(paymentResponse);
 
   return payload;
 }
@@ -145,6 +154,34 @@ async function publicApiCall(endpoint: string): Promise<unknown> {
 
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
+}
+
+function getExplorerLink(transaction: string): string {
+  return `Explorer: https://basescan.org/tx/${transaction}`;
+}
+
+function decodePaymentSettlement(paymentResponse: string | null): PaymentSettlementInfo | null {
+  if (!paymentResponse) {
+    return null;
+  }
+
+  try {
+    return decodePaymentResponseHeader(paymentResponse) as PaymentSettlementInfo;
+  } catch {
+    return null;
+  }
+}
+
+function printPaymentSettlement(paymentResponse: string | null): void {
+  const settlement = decodePaymentSettlement(paymentResponse);
+  if (!settlement?.transaction) {
+    return;
+  }
+
+  console.log('');
+  console.log('Payment settlement confirmed:');
+  console.log(`Transaction: ${settlement.transaction}`);
+  console.log(getExplorerLink(settlement.transaction));
 }
 
 function getBudgetRecommendation(requests: Record<keyof typeof FALLBACK_PRICES, number>): string[] {

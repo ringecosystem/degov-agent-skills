@@ -20,6 +20,8 @@ pnpm exec tsx degov-client.ts wallet address
 
 Both commands show the Base wallet address and suggested top-up ranges based on current API pricing, so users have a rough recharge reference before funding.
 
+Successful paid API calls also print the settlement transaction hash together with clickable Base explorer links, so users can inspect the onchain payment directly.
+
 Fund the displayed Base address with USDC, then test:
 
 ```bash

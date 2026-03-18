@@ -10,6 +10,7 @@ import { base } from 'viem/chains';
 const WALLET_FILE_MODE = 0o600;
 const DEFAULT_STATE_DIR = path.join(os.homedir(), '.agents', 'state', 'dao-governance');
 export const DEFAULT_WALLET_PATH = path.join(DEFAULT_STATE_DIR, 'wallet.json');
+export const DEFAULT_PASSPHRASE_PATH = path.join(DEFAULT_STATE_DIR, 'wallet-passphrase');
 const LEGACY_WALLET_PATHS = [
   path.join(os.homedir(), '.codex', 'memories', 'degov-agent-skills', 'dao-governance-wallet.json'),
 ];
@@ -75,6 +76,14 @@ function ensureWalletDir(walletPath: string): void {
   fs.mkdirSync(path.dirname(walletPath), { recursive: true });
 }
 
+function writeSecretFile(secretPath: string, secret: string): void {
+  fs.mkdirSync(path.dirname(secretPath), { recursive: true });
+  fs.writeFileSync(secretPath, `${secret}\n`, {
+    mode: WALLET_FILE_MODE,
+  });
+  normalizeWalletPermissions(secretPath);
+}
+
 function normalizeWalletPermissions(walletPath: string): void {
   if (!fs.existsSync(walletPath)) {
     return;
@@ -92,7 +101,9 @@ function normalizeWalletPermissions(walletPath: string): void {
 
 async function promptPassphrase(promptLabel: string): Promise<string> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error('Wallet passphrase required. Set DEGOV_AGENT_WALLET_PASSPHRASE for non-interactive use.');
+    throw new Error(
+      'Wallet passphrase required. Initialize the wallet first, or set DEGOV_AGENT_WALLET_PASSPHRASE or DEGOV_AGENT_WALLET_PASSPHRASE_PATH for non-interactive use.'
+    );
   }
 
   const rl = createInterface({
@@ -111,10 +122,55 @@ async function promptPassphrase(promptLabel: string): Promise<string> {
   }
 }
 
+function getPassphrasePath(): string {
+  return process.env.DEGOV_AGENT_WALLET_PASSPHRASE_PATH || DEFAULT_PASSPHRASE_PATH;
+}
+
+function getStoredPassphrase(): string | null {
+  const passphrasePath = getPassphrasePath();
+  if (!fs.existsSync(passphrasePath)) {
+    return null;
+  }
+
+  normalizeWalletPermissions(passphrasePath);
+  const passphrase = fs.readFileSync(passphrasePath, 'utf8').trim();
+  if (!passphrase) {
+    throw new Error(`Wallet passphrase file is empty: ${passphrasePath}`);
+  }
+
+  return passphrase;
+}
+
+function generatePassphrase(): string {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function getOrCreateStoredPassphrase(): string {
+  const existing = getStoredPassphrase();
+  if (existing) {
+    return existing;
+  }
+
+  const passphrase = generatePassphrase();
+  writeSecretFile(getPassphrasePath(), passphrase);
+  return passphrase;
+}
+
 async function resolvePassphrase(options: { confirm?: boolean } = {}): Promise<string> {
   const fromEnv = process.env.DEGOV_AGENT_WALLET_PASSPHRASE;
   if (fromEnv) {
     return fromEnv;
+  }
+
+  if (!options.confirm) {
+    const stored = getStoredPassphrase();
+    if (stored) {
+      return stored;
+    }
+  }
+
+  if (options.confirm) {
+    return getOrCreateStoredPassphrase();
   }
 
   const passphrase = await promptPassphrase('Wallet passphrase: ');

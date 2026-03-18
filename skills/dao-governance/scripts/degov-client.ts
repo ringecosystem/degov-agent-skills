@@ -241,6 +241,22 @@ function getFundingRecommendations(pricing: PricingInfo): string[] {
   });
 }
 
+async function printWalletFundingGuidance(address: `0x${string}`): Promise<void> {
+  const pricing = await getPricing();
+  console.log('');
+  console.log(`${YELLOW}Fund this Base address with a small amount of USDC for paid API calls.${RESET}`);
+  console.log('');
+  console.log('Suggested top-up range by expected usage:');
+  console.log('');
+  for (const line of getFundingRecommendations(pricing)) {
+    console.log(line);
+  }
+  console.log('');
+  console.log(`${YELLOW}Wallet address: ${address}${RESET}`);
+  console.log(`${YELLOW}Do not transfer large amounts of money to this wallet.${RESET}`);
+  console.log(`${YELLOW}A small testing balance is the safer default.${RESET}`);
+}
+
 async function printBudget(amountUsd: string): Promise<void> {
   const amount = Number(amountUsd);
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -280,7 +296,6 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
 
     if (subcommand === 'init') {
       const result = await initWallet();
-      const pricing = await getPricing();
       console.log(result.created ? 'Created payment wallet.' : 'Wallet already exists.');
       printJson({
         address: result.address,
@@ -291,18 +306,8 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
       console.log(
         `${YELLOW}This wallet is used only to pay small x402 fees when the skill calls degov-agent-api.${RESET}`
       );
-      console.log(
-        `${YELLOW}It helps keep API payments separate from your main wallet, fund this Base address with a small amount of USDC for paid API calls.${RESET}`
-      );
-      console.log('');
-      console.log('The recommended amount depends on your expected usage:');
-      console.log('');
-      for (const line of getFundingRecommendations(pricing)) {
-        console.log(line);
-      }
-      console.log('');
-      console.log(`${YELLOW}Do not transfer large amounts of money to this wallet.${RESET}`);
-      console.log(`${YELLOW}A small testing balance is the safer default.${RESET}`);
+      console.log(`${YELLOW}It helps keep API payments separate from your main wallet.${RESET}`);
+      await printWalletFundingGuidance(result.address);
       return;
     }
 
@@ -313,6 +318,7 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
         encrypted: Boolean(wallet.crypto),
         walletPath,
       });
+      await printWalletFundingGuidance(account.address);
       return;
     }
 

@@ -15,10 +15,12 @@ pnpm exec tsx degov-client.ts wallet address
 Fund the displayed Base address with USDC, then test:
 
 ```bash
-export DEGOV_AGENT_API_BASE_URL=http://127.0.0.1:3311
 pnpm exec tsx degov-client.ts wallet balance
 pnpm exec tsx degov-client.ts daos
 ```
+
+By default, the CLI targets the deployed API at `https://agent-api.degov.ai`.
+Set `DEGOV_AGENT_API_BASE_URL` only when you want to use a local or alternate API.
 
 ## Free and paid APIs
 
@@ -65,3 +67,6 @@ pnpm exec tsx degov-client.ts item proposal <id>
 pnpm exec tsx degov-client.ts freshness
 pnpm exec tsx degov-client.ts health
 ```
+
+`health`, `budget`, and `daos` work without a funded wallet.
+`activity`, `brief`, `item`, and `freshness` require the x402 wallet to be initialized and funded.

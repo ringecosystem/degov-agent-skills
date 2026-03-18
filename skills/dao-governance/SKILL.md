@@ -42,6 +42,8 @@ pnpm exec tsx degov-client.ts wallet balance
 
 If you see the balance, you are ready to use the full capabilities of the API.
 
+By default, the CLI targets the production deployment at `https://agent-api.degov.ai`. Override `DEGOV_AGENT_API_BASE_URL` only when you intentionally want to point the skill at a local or alternate environment.
+
 Note: The wallet data is stored locally in an encrypted file. Do not share that file or the passphrase with anyone. The default path for the wallet file is `~/.agents/state/dao-governance/wallet.json`.
 
 ## Available commands
@@ -57,6 +59,7 @@ pnpm exec tsx degov-client.ts wallet balance
 # Check current API pricing and budget for 1 USD of usage
 pnpm exec tsx degov-client.ts budget --usd 1
 # Explore DAOs, recent activity, briefs, specific items, data freshness, and health status
+# health, budget, and daos are available without a funded wallet
 pnpm exec tsx degov-client.ts daos
 pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
 pnpm exec tsx degov-client.ts brief ens

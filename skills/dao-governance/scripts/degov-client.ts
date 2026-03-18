@@ -6,14 +6,14 @@ import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { DEFAULT_WALLET_PATH, getAccount, getResolvedWalletPath, getUsdcBalance, initWallet } from './wallet-store.js';
 
-const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'http://127.0.0.1:3310';
+const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'https://agent-api.degov.ai';
 
 const FALLBACK_PRICES = {
   daos: 0.005,
   activity: 0.005,
   freshness: 0.005,
-  brief: 0.02,
-  item: 0.02,
+  brief: 0.01,
+  item: 0.01,
 } as const;
 
 const ITEM_KINDS = new Set(['proposal', 'forum_topic']);
@@ -103,6 +103,29 @@ async function apiCall(endpoint: string): Promise<unknown> {
   console.error(`Calling: ${url}`);
 
   const response = await fetchWithPayment(url);
+  const text = await response.text();
+
+  let payload: unknown = text;
+  try {
+    payload = JSON.parse(text) as unknown;
+  } catch {
+    payload = text;
+  }
+
+  if (!response.ok) {
+    const detail = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    throw new Error(`API error ${response.status}: ${detail}`);
+  }
+
+  return payload;
+}
+
+async function publicApiCall(endpoint: string): Promise<unknown> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  console.error(`Calling: ${url}`);
+
+  const response = await fetch(url);
   const text = await response.text();
 
   let payload: unknown = text;
@@ -316,7 +339,7 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
   },
 
   async daos() {
-    const data = await apiCall('/v1/daos');
+    const data = await publicApiCall('/v1/daos');
     printJson(data);
   },
 

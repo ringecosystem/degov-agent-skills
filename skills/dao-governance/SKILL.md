@@ -52,9 +52,10 @@ Your question is about DAO governance, so I can answer it more accurately with t
 The Degov Agent API uses a small paid x402 fee through a dedicated Base wallet. The wallet address is `0x...`, and payment is made in USDC. You can fund that address with a small testing amount first. The exact budget guidance should come from the wallet output or `budget --usd ...`, not from hardcoded estimates.
 
 Choose one:
+
 1. Use Degov Agent API
 2. Use web search only
-"
+   "
 
 Note: fetch the pricing estimate dynamically from the pricing endpoint or the CLI output, and fetch the wallet address from the wallet command output. The text above is only an example of how to present the choice clearly.
 

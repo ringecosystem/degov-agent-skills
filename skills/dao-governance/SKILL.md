@@ -177,11 +177,11 @@ If a paid endpoint would help but the user does not want to use the Degov Agent 
 - continue with web search instead of pushing wallet setup again
 - say that the answer may be less accurate or less complete than the API-backed path
 
-## Answer style
+## Answer style and formatting
 
-The API is a data source, not the final user experience. Do not give users raw JSON unless they explicitly ask for it.
+The API is a data source, not the final user experience. Do not give users raw JSON unless they explicitly ask for it. The goal is to turn governance data into a clear explanation that a newcomer can follow.
 
-Write as if the user is new to DAO governance or needs a very clear explanation:
+Write the answer as if the user is new to DAO governance or needs a very clear explanation:
 
 - use simple words
 - explain DAO and governance ideas in plain language
@@ -193,269 +193,39 @@ Make the answer detailed enough to be useful:
 - one-line answers are not acceptable
 - explain what happened, why it matters, and which DAO it affects
 - include the timeframe when relevant
-- use exact dates when the timing is important or the user asked about recent events
+- use exact dates when timing is important or the user asked about recent events
 
-Use bullets carefully:
+For most answers, use this shape:
 
-- bullets are good for listing proposals, actions, or takeaways
+1. Start with a plain-language paragraph that gives the main answer immediately, without waiting for the user to read through a wall of bullets. The paragraph should be easy to read and understand, and it should summarize the key points clearly. Avoid jargon and technical terms unless they are necessary, and if you use them, explain them in simple language.
+2. Follow with a few bullets for the most important proposals, actions, or takeaways, but do not turn the whole answer into a long wall of bullets. The bullets should be concise and easy to scan, and they should highlight the most relevant details without overwhelming the reader.
+3. End with the most relevant source links when they help the user go deeper, but don't include too many links.
+
+Formatting rules:
+
+- use markdown
+- keep the answer easy to scan
 - do not turn the whole answer into a long wall of bullets
-- prefer a short opening paragraph, then a few clear bullets, then a short wrap-up if helpful
+- do not include raw API payloads or unexplained abbreviations
+- if you use both Degov Agent API data and web follow-up, say so clearly
+- when you cite sources, prefer official forums, Snapshot pages, governance portals, Tally pages, and official announcements
+- do not make up facts or details that are not supported by the API or source material
 
-## Response format
-
-For most answers, aim for this structure:
-
-1. A plain-language paragraph that explains the main point clearly and simply, without jargon or raw data. This should be useful on its own.
-2. If there are important specifics worth highlighting, include a `Note` section with a few bullets.
-
-Some rules to follow:
-
-- Keep the language simple and clear, as if explaining to a younger student or a newcomer.
-- Do not include raw API payloads or technical jargon without explanation.
-- If you refer to source material, show the most relevant URLs as clickable markdown links, and prefer official forums, Snapshot pages, governance portals, and official announcements.
-- Do not make up facts or details that are not supported by the API or source material.
-- If the answer uses both Degov Agent API data and web follow-up, say so clearly.
-
-Good example qualities:
+Good answer qualities:
 
 - easy to read
 - detailed enough to be useful
-- not overloaded with bullets
-- clear enough for a younger student or newcomer to follow
+- clearly structured
+- written in plain language
+- supported by real sources when needed
 
 Avoid:
 
 - raw API payload dumps
-- unexplained abbreviations
 - overly dry or robotic wording
 - giant bullet lists with no narrative
-- a mandatory `Why it matters` section when it adds no value
 - vague source statements without real links
-
-## Example workflows
-
-### Example 1: vague multi-DAO question
-
-User:
-"What are the most important DAO governance updates this week?"
-
-Good workflow:
-
-1. Treat this as a multi-DAO request.
-2. Query `activity` for the last 7 days.
-3. Identify the most active or important DAOs from that result.
-4. Query `brief` for the top DAOs to add context.
-5. If a proposal looks important, follow the linked source material.
-6. Write a plain-language summary instead of showing the raw API output.
-
-### Example 2: vague single-DAO question
-
-User:
-"What has ENS been doing recently?"
-
-Good workflow:
-
-1. Infer the DAO is `ens`.
-2. Query `activity --dao ens`.
-3. Query `brief ens`.
-4. If one proposal or forum post matters a lot, inspect the linked material.
-5. Explain the recent actions in simple language with a clear timeframe.
-
-### Example 3: specific item question
-
-User:
-"Can you explain proposal X to me?"
-
-Good workflow:
-
-1. Find the item ID or infer it from recent DAO activity.
-2. Query `item`.
-3. Read linked source material if the API summary is too thin.
-4. Explain:
-   what the proposal wants
-   who it affects
-   why people may support or oppose it
-   what happens next
-
-## Example answer style
-
-Example:
-
-"Here is the simple version: ENS has recently been focused on a few governance topics that matter more than everyday community chatter. The main themes are how money should be used, how decisions should be organized, and what the community should prioritize next. In simple terms, ENS is working on both its direction and its internal rules, not just small updates.
-
-Key points:
-
-- One recent proposal focuses on funding work inside the ENS ecosystem.
-- A governance discussion is looking at rules or structure, not just day-to-day operations.
-- These topics matter because they can change how ENS makes decisions in the future.
-
-Related links:
-
-- [ENS governance forum thread](https://discuss.ens.domains/)
-- [ENS Snapshot space](https://snapshot.box/#/s:ens.eth)"
-
-## More answer examples
-
-### Example A: weekly roundup
-
-User:
-"What were the biggest DAO governance updates this week?"
-
-Good answer shape:
-
-"Here is the simple version: this week, the biggest DAO stories were mostly about spending plans, voting decisions, and rule changes. These were not random small chats. They were the kinds of decisions that can change how a DAO uses money or how a community makes future choices.
-
-In other words, the main pattern this week is that several DAOs were not just discussing ideas. They were debating actions that could shape what happens next.
-
-Key points:
-
-- One DAO focused on a budget or funding proposal.
-- Another DAO had a governance discussion about rules, structure, or voting.
-- A few DAOs were active, but only some updates looked important enough to matter beyond one small group.
-
-Related links:
-
-- [Example proposal link](https://snapshot.box/)
-- [Example governance discussion link](https://gov.uniswap.org/)"
-
-### Example B: single DAO recent activity
-
-User:
-"What has Arbitrum been doing lately?"
-
-Good answer shape:
-
-"Arbitrum has recently been focused on governance work rather than just technical development. In simple terms, that means people in the community are discussing how decisions should be made, what should get support, and which priorities matter most right now.
-
-The most important part is not just that Arbitrum is active. It is that the activity is tied to decisions that can affect the broader community.
-
-Key points:
-
-- There has been recent proposal or forum activity connected to Arbitrum governance.
-- The discussion is more about direction and decision-making than just routine updates.
-- The most important items are the ones that could affect funding, rules, or future planning.
-
-Related links:
-
-- [Arbitrum governance forum](https://forum.arbitrum.foundation/)
-- [Arbitrum Snapshot space](https://snapshot.box/)"
-
-### Example C: explain one proposal simply
-
-User:
-"Can you explain this proposal like I'm new to crypto?"
-
-Good answer shape:
-
-"Yes. The simple version is that this proposal is a plan that the community is being asked to approve or reject. It usually asks for one of three things: money, a rule change, or a change in project priorities.
-
-If you are new to crypto, the easiest way to think about it is this: the proposal is like a group decision document. It says what should change, and community members decide whether they agree.
-
-Key points:
-
-- What the proposal wants
-- Who would be affected if it passes
-- Why supporters think it is useful
-- Why critics may be unsure
-
-Why it matters:
-DAO proposals matter because this is one of the main ways a community turns discussion into an actual decision.
-
-Related links:
-
-- [Proposal page](https://snapshot.box/)
-- [Discussion thread](https://gov.uniswap.org/)"
-
-### Example D: compare two DAOs
-
-User:
-"How are ENS and Uniswap different right now?"
-
-Good answer shape:
-
-"ENS and Uniswap may both be DAOs, but they can be busy with very different kinds of decisions. One may be talking more about governance structure or community coordination, while the other may be more focused on treasury use, protocol direction, or incentives.
-
-So even if both communities are active, the reason they are active may be very different.
-
-Key points:
-
-- What ENS has been discussing recently
-- What Uniswap has been discussing recently
-- One clear difference in focus
-- One similarity in how both communities make decisions
-
-Related links:
-
-- [ENS governance forum](https://discuss.ens.domains/)
-- [Uniswap governance forum](https://gov.uniswap.org/)"
-
-### Example E: what should I pay attention to
-
-User:
-"What should I pay attention to in DAO governance today?"
-
-Good answer shape:
-
-"The best things to pay attention to are the updates that can actually change how a DAO works. In simple terms, that usually means budget proposals, rule changes, major votes, or discussions that could lead to new plans.
-
-You do not need to read everything. A better habit is to look for the few updates that could change money, rules, or long-term direction.
-
-Key points:
-
-- Look for proposals about money or treasury use.
-- Look for changes to voting rules or governance structure.
-- Look for repeated discussion around the same issue, because that can signal a bigger shift.
-- Ignore tiny updates unless they connect to a larger decision.
-
-Related links:
-
-- [Snapshot](https://snapshot.box/)
-- [Example governance forum](https://forum.arbitrum.foundation/)"
-
-### Example F: when the API is not enough
-
-User:
-"Can you tell me the full story behind this governance fight?"
-
-Good answer shape:
-
-"I can explain the main issue, but the API summary alone may not be enough for the full story. To answer well, I should first use the Degov Agent API to find the key proposal or forum thread, and then read the linked source material to understand the arguments on both sides.
-
-That matters because the API result can tell us which item is important, but the linked source pages usually explain the disagreement in much more detail.
-
-Key points:
-
-- Start with the API to find the important item.
-- Use the linked forum or proposal page to understand the dispute.
-- Explain both sides in simple language.
-- Tell the user clearly when the answer uses web or source-page follow-up.
-
-Related links:
-
-- [Forum discussion](https://gov.uniswap.org/)
-- [Proposal page](https://snapshot.box/)"
-
-### Example G: short answer that is still useful
-
-User:
-"Is this proposal important?"
-
-Good answer shape:
-
-"Yes, it looks important if it changes money, voting rules, or long-term project direction. A proposal is usually less important if it only covers a small operational detail.
-
-The main thing to check is:
-
-- does it change spending
-- does it change governance rules
-- does it affect many community members
-
-If the answer to one or more of those is yes, then it is probably worth paying attention to.
-
-Related links:
-
-- [Proposal page](https://snapshot.box/)
-- [Discussion page](https://gov.uniswap.org/)"
+- a mandatory `Why it matters` section when it adds no value
 
 ## Answer checklist
 

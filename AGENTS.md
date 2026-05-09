@@ -1,93 +1,116 @@
 # AGENTS.md
 
-This repository is the external skill home for DeGov-related agent skills. It currently contains one primary skill, `dao-governance`, plus a small TypeScript CLI used by that skill to query `degov-agent-api` and make x402-paid API calls through a dedicated local wallet.
+This repository is the external home for DeGov agent skills. Its main purpose is to package reusable agent knowledge for DAO governance research, with a focus on making answers evidence-based, source-aware, and safe around paid API access.
 
 ## Repository map
 
-- `README.md`: high-level repository overview and current skill behavior.
-- `skills/dao-governance/SKILL.md`: the actual Hermes/Codex-style skill document loaded when a user asks about Web3 DAO governance.
-- `skills/dao-governance/scripts/`: TypeScript CLI helpers for wallet management, free API calls, and x402-paid API calls.
-- `skills/dao-governance/scripts/degov-client.ts`: command-line entry point for the Degov Agent API.
-- `skills/dao-governance/scripts/wallet-store.ts`: local wallet creation, encryption, migration, balance lookup, and secret-file handling.
-- `.github/workflows/ci.yml`: CI validation for formatting and TypeScript compilation.
+- `README.md`: short repository overview and current behavior summary.
+- `skills/dao-governance/SKILL.md`: the user-facing agent skill. It defines when to use DeGov governance data, how to choose between API and web sources, how to ask for paid-call consent, and how to write answers.
+- `skills/dao-governance/scripts/README.md`: operator-facing notes for the bundled CLI helper.
+- `skills/dao-governance/scripts/degov-client.ts`: TypeScript CLI for Degov Agent API access, including DAO discovery, budgets, activity, briefs, item lookup, freshness, and health checks.
+- `skills/dao-governance/scripts/wallet-store.ts`: local Base wallet storage, encryption, migration, passphrase handling, and USDC balance lookup.
+- `.github/workflows/ci.yml`: repository CI for documentation/script formatting and TypeScript compilation.
 
-## What this codebase does
+## Core purpose
 
-The `dao-governance` skill is intended to make agents answer DAO governance questions with evidence instead of guessing. It uses `degov-agent-api` as the primary source for recent governance data, then falls back to or supplements with web search when API coverage is missing, stale, or too thin.
+The `dao-governance` skill helps agents answer Web3 DAO governance questions without inventing facts. It treats `degov-agent-api` as the primary evidence source for supported DAO data, then uses web search as a secondary layer when API data is missing, stale, too shallow, or needs source verification.
 
-The bundled CLI defaults to the production API:
+The intended user experience is not a raw API dump. Agents should turn governance data into clear explanations that identify what happened, why it matters, which DAO it affects, and what sources support the answer.
 
-```bash
+## Degov Agent API model
+
+The CLI defaults to the production API:
+
+```text
 https://agent-api.degov.ai
 ```
 
-It supports these main commands from `skills/dao-governance/scripts`:
+The skill distinguishes between free discovery endpoints and paid research endpoints.
 
-```bash
-pnpm exec tsx degov-client.ts health
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts budget --usd 1
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
-pnpm exec tsx degov-client.ts brief ens
-pnpm exec tsx degov-client.ts item proposal <id>
-pnpm exec tsx degov-client.ts freshness
-```
+Free endpoints:
 
-Free endpoints should be used before paid endpoints when they are enough. Paid endpoints require a dedicated local Base wallet funded with USDC and must only be used after the user agrees to the paid Degov Agent API path.
+- `GET /health`
+- `GET /v1/meta/pricing`
+- `GET /v1/daos`
 
-## Dependency and validation commands
+Paid endpoints:
 
-Most validation runs from the scripts package:
+- `GET /v1/activity`
+- `GET /v1/daos/:daoId/brief`
+- `GET /v1/items/:kind/:externalId`
+- `GET /v1/system/freshness`
 
-```bash
-cd skills/dao-governance/scripts
-pnpm install
-pnpm run format:check
-pnpm run typecheck
-pnpm exec tsx degov-client.ts help
-```
+Use free endpoints when they are enough. Use paid endpoints only after the user explicitly chooses the Degov Agent API path.
 
-Use the combined package check when appropriate:
+## CLI capabilities
 
-```bash
-cd skills/dao-governance/scripts
-pnpm run check
-```
+`degov-client.ts` provides these capability groups:
 
-Before opening a PR, also run repository-level git checks from the worktree root:
+- Wallet management: initialize a dedicated local wallet, show its address, and check Base USDC balance.
+- Budget guidance: fetch live pricing and estimate how many API calls a given USDC budget can cover.
+- DAO discovery: list covered DAOs without requiring payment.
+- Governance research: fetch recent activity, DAO briefs, specific proposal/forum items, and system freshness.
+- Health checks: confirm the configured API is reachable.
 
-```bash
-git status --short --branch
-git diff --check
-git diff --stat origin/main...HEAD
-```
+The CLI is a helper for agents and operators. It should not replace the answer-writing guidance in `SKILL.md`.
 
-If formatting changes are needed, run:
+## Wallet and runtime state
 
-```bash
-cd skills/dao-governance/scripts
-pnpm run format
-```
+Paid API calls use x402 payments on Base with USDC. The repository must never contain wallet secrets or runtime payment state.
 
-## Coding and documentation conventions
+Default local state locations are outside git:
 
-- Prefer clear, maintenance-oriented comments only when the intent is not obvious.
-- Keep user-facing skill guidance plain and explicit; do not dump raw API payloads in normal answers.
-- Do not hardcode pricing estimates in documentation when live pricing is available through `budget` or `/v1/meta/pricing`.
-- Do not ask users to paste private keys. The CLI must manage a dedicated local wallet instead.
-- Keep wallet and passphrase files outside the repository. Defaults are under `~/.agents/state/dao-governance/`.
-- Preserve the free-vs-paid decision flow in `SKILL.md`: use free endpoints when sufficient, and ask before paid calls.
-- When changing API behavior or CLI commands, update all related docs together: root `README.md`, `skills/dao-governance/SKILL.md`, and `skills/dao-governance/scripts/README.md`.
+- Wallet file: `~/.agents/state/dao-governance/wallet.json`
+- Wallet passphrase file: `~/.agents/state/dao-governance/wallet-passphrase`
 
-## Security and paid-call guardrails
+Environment overrides:
 
-- Treat wallet files, private keys, passphrases, API tokens, and `.env` files as secrets.
-- Never commit generated wallet material or passphrase files.
-- Paid calls should be intentional and visible to the user.
-- The skill should present a simple choice before paid use:
-  1. Use Degov Agent API
-  2. Use web search only
-- If the user declines paid API use, proceed with web search and do not keep pushing wallet setup.
+- `DEGOV_AGENT_API_BASE_URL`: alternate API base URL.
+- `DEGOV_AGENT_WALLET_PATH`: alternate wallet file path.
+- `DEGOV_AGENT_WALLET_PASSPHRASE`: explicit passphrase for non-interactive use.
+- `DEGOV_AGENT_WALLET_PASSPHRASE_PATH`: alternate passphrase file path.
+
+Keep local-only agent state, runtime files, passphrases, `.env` files, logs, and generated wallets out of version control.
+
+## Paid-call consent rules
+
+Before any paid endpoint is used, the agent should present the user with a simple choice:
+
+1. Use Degov Agent API
+2. Use web search only
+
+If the user chooses the API path, the agent can initialize or reuse the local wallet and explain how to fund the displayed Base address with USDC if the balance is insufficient.
+
+If the user declines paid API use, continue with web search and clearly state that the answer is based on web sources instead of Degov Agent API data.
+
+Do not repeatedly push wallet setup after the user declines.
+
+## Answering DAO governance questions
+
+The skill should encourage a short planning step before answering:
+
+- Identify the likely DAO or DAO family.
+- Decide whether the user wants discovery, recent activity, a DAO brief, or a specific item explanation.
+- Decide whether free API data is enough before considering paid endpoints.
+- Use linked source URLs or web follow-up when API output needs verification or context.
+
+Good answers should be plain-language, source-aware, and detailed enough to be useful. Avoid raw JSON, vague claims, and long undifferentiated bullet lists.
+
+## Documentation conventions
+
+When API behavior, CLI commands, wallet behavior, or paid-call rules change, keep the related documentation synchronized:
+
+- Root `README.md`
+- `skills/dao-governance/SKILL.md`
+- `skills/dao-governance/scripts/README.md`
+- This `AGENTS.md` file when the shared repository knowledge changes
+
+Prefer durable repository knowledge here. Avoid personal workflow instructions, branch conventions, review preferences, or developer-specific process notes.
+
+## Security guardrails
+
+- Never ask users to paste private keys.
+- Never commit wallet files, passphrases, API tokens, `.env` files, or generated runtime state.
+- Do not hardcode paid API pricing in long-lived docs when live pricing is available.
+- Keep payment wallets dedicated to small API fees only; do not encourage transferring large balances.
+- Treat API data as evidence, not as final prose. The agent remains responsible for explaining context and uncertainty clearly.

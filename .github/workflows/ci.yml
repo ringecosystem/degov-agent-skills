@@ -36,5 +36,8 @@ jobs:
       - name: Check formatting
         run: pnpm run format:check
 
-      - name: Check TypeScript compilation
-        run: pnpm run typecheck
+      - name: Check shell scripts
+        run: bash -n ../../../scripts/*.sh
+
+      - name: Check TypeScript compilation and CLI startup
+        run: pnpm run check

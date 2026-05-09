@@ -23,7 +23,7 @@ Invoke this skill for questions such as:
 
 This skill relies on the Degov Agent API. Some endpoints are free, while others require small x402 payments on Base. The bundled script manages a dedicated local wallet for those payments. The wallet is meant only for API usage, and the wallet passphrase is handled locally so private keys do not need to be shared or exposed in chat.
 
-Do not assume wallet setup is always the first step. First decide whether the question can be answered with free endpoints such as `health`, `budget`, or `daos`. If the user will likely benefit from paid endpoints such as `activity`, `brief`, `item`, or `freshness`, ask whether they want to use the Degov Agent API paid path. Only then move into wallet setup.
+Do not assume wallet setup is always the first step. First decide whether the question can be answered with free endpoints such as `health`, `budget`, or `daos`. If the user will likely benefit from paid endpoints such as `activity`, `governance-events`, `brief`, `item`, or `freshness`, ask whether they want to use the Degov Agent API paid path. Only then move into wallet setup.
 
 If the user agrees to the paid path, initialize or reuse the local wallet:
 
@@ -80,10 +80,12 @@ pnpm exec tsx degov-client.ts wallet balance
 # Check current API pricing and budget for a given USD amount
 pnpm exec tsx degov-client.ts budget --usd 1
 
-# Explore DAOs, recent activity, briefs, specific items, data freshness, and health status
-# health, budget, and daos are available without a funded wallet
+# Explore DAOs, recent activity, event-time governance events, briefs, specific items,
+# data freshness, and health status. health, budget, and daos are available without a
+# funded wallet.
 pnpm exec tsx degov-client.ts daos
 pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
+pnpm exec tsx degov-client.ts governance-events --hours 24 --limit 200
 pnpm exec tsx degov-client.ts brief ens
 pnpm exec tsx degov-client.ts item proposal <id>
 pnpm exec tsx degov-client.ts freshness
@@ -101,9 +103,14 @@ Free: for basic information and discovery, no payment required:
 Paid: for detailed and recent governance information, payment required:
 
 - `GET /v1/activity`
+- `GET /v1/governance-events`
 - `GET /v1/daos/:daoId/brief`
 - `GET /v1/items/:kind/:externalId`
 - `GET /v1/system/freshness`
+
+`/v1/governance-events` is the event-time feed. Prefer it for Realtime Signal-style questions, deadline-sensitive windows, or questions like "what governance events happened today?" because it models proposal created/voting started/ending soon/ended and forum activity as explicit events. The HTTP endpoint requires `start_ms` and `end_ms`; the CLI's `governance-events --hours 24` option builds that window for you.
+
+The backend also has an internal-token bypass for trusted first-party services. Do not present that as a setup path for external users or ordinary agents; this skill's public path remains free endpoints plus x402-paid calls after consent.
 
 ## Standard workflow for answering questions
 
@@ -116,7 +123,7 @@ Users often ask broad or fuzzy questions. Do not answer too early.
 First decide:
 
 - which DAO or DAO family the user is probably asking about
-- whether the user wants discovery, recent activity, a DAO summary, or one specific item
+- whether the user wants discovery, recent activity, event-time governance events, a DAO summary, or one specific item
 - what time range is implied
 - whether free endpoints can answer enough before you move to paid endpoints
 
@@ -128,7 +135,7 @@ Examples:
 
 - "What are the biggest DAO governance stories this week?"
   Infer DAO scope: multi-DAO
-  Likely endpoints: `daos`, `activity --hours 168 --limit ...`, then `brief` for the most important DAOs
+  Likely endpoints: `governance-events --hours 168 --limit 200` when event timing matters, or `activity --hours 168 --limit ...` for a broad last-updated scan, then `brief` for the most important DAOs
 
 - "Can you explain this ENS proposal?"
   Infer DAO: `ens`
@@ -139,7 +146,8 @@ Examples:
 Use the API intentionally:
 
 - `daos`: discover which DAOs are in coverage
-- `activity`: scan recent actions across one DAO or many DAOs
+- `activity`: scan recently updated proposals and forum topics; use `--types proposal` and `--types forum_topic` as separate calls when you need fuller coverage than one mixed limited feed can provide
+- `governance-events`: get an event-time feed for a specific window; use this for Realtime Signal-style summaries, deadlines, vote starts/ends, and "what happened today/this week" questions
 - `brief <dao-id>`: get compact context before writing the answer
 - `item <proposal|forum_topic> <external-id>`: drill into one proposal or forum topic
 - `freshness`: check whether the data is recent enough to trust
@@ -154,6 +162,15 @@ When a question needs more than one API call:
 - run the necessary API calls as a batch
 - collect all results
 - only then write the answer
+
+For wide recent-activity scans, do not rely only on one mixed `activity` request with a high limit. The backend caps candidate sets, so for fuller coverage fetch proposals and forum topics separately, then merge/deduplicate in the agent:
+
+```bash
+pnpm exec tsx degov-client.ts activity --hours 168 --limit 200 --types proposal
+pnpm exec tsx degov-client.ts activity --hours 168 --limit 200 --types forum_topic
+```
+
+Use `governance-events` instead of `activity` when the answer depends on the event's own timestamp rather than the item's latest update time.
 
 Do not stream raw intermediate payloads to the user unless they explicitly ask for them.
 
@@ -233,7 +250,7 @@ Avoid:
 Before replying, quickly check:
 
 1. Did I figure out which DAO or DAO group the user probably means?
-2. Did I choose the right API endpoints and gather enough results before answering?
+2. Did I choose the right API endpoints, including `governance-events` for event-time windows, and gather enough results before answering?
 3. Did I use linked source materials or web follow-up when the API alone was too thin?
 4. Did I explain the answer in simple language instead of copying raw API output?
 5. Is the answer detailed enough to be useful, not just one line?

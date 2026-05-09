@@ -9,14 +9,26 @@ import { DEFAULT_WALLET_PATH, getAccount, getResolvedWalletPath, getUsdcBalance,
 const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'https://agent-api.degov.ai';
 
 const FALLBACK_PRICES = {
-  daos: 0.005,
+  daos: null,
   activity: 0.005,
+  governanceEvents: 0.005,
   freshness: 0.005,
   brief: 0.01,
   item: 0.01,
 } as const;
 
+type PricingKey = keyof typeof FALLBACK_PRICES;
+
 const ITEM_KINDS = new Set(['proposal', 'forum_topic']);
+const GOVERNANCE_EVENT_TYPES = new Set([
+  'proposal_created',
+  'proposal_voting_started',
+  'proposal_voting_ending_soon',
+  'proposal_voting_ended',
+  'proposal_updated',
+  'forum_topic_created',
+  'forum_discussion_active',
+]);
 const YELLOW = process.stdout.isTTY ? '\x1b[33m' : '';
 const RESET = process.stdout.isTTY ? '\x1b[0m' : '';
 
@@ -25,18 +37,18 @@ interface PricingResponse {
   pricing: {
     token: string;
     network: string;
-    entries: Record<keyof typeof FALLBACK_PRICES, { price: string | null; paid: boolean }>;
+    entries: Partial<Record<PricingKey, { price: string | null; paid: boolean }>>;
   };
 }
 
 interface PricingInfo {
-  prices: Record<keyof typeof FALLBACK_PRICES, number | null>;
+  prices: Record<PricingKey, number | null>;
   source: 'live' | 'fallback';
   token: string;
   network: string;
 }
 
-type BudgetDisplayRequests = Record<keyof typeof FALLBACK_PRICES, number | 'free'>;
+type BudgetDisplayRequests = Record<PricingKey, number | 'free'>;
 
 interface ParsedArgs {
   _: string[];
@@ -184,8 +196,8 @@ function printPaymentSettlement(paymentResponse: string | null): void {
   console.log(getExplorerLink(settlement.transaction));
 }
 
-function getBudgetRecommendation(requests: Record<keyof typeof FALLBACK_PRICES, number>): string[] {
-  const lowCostCapacity = Math.min(requests.daos, requests.activity, requests.freshness);
+function getBudgetRecommendation(requests: Record<PricingKey, number>): string[] {
+  const lowCostCapacity = Math.min(requests.daos, requests.activity, requests.governanceEvents, requests.freshness);
   const detailCapacity = Math.min(requests.brief, requests.item);
 
   if (lowCostCapacity < 20 || detailCapacity < 5) {
@@ -215,6 +227,15 @@ function getBudgetRecommendation(requests: Record<keyof typeof FALLBACK_PRICES, 
   ];
 }
 
+function priceFromEntry(
+  entries: Partial<Record<PricingKey, { price: string | null; paid: boolean }>>,
+  key: PricingKey
+): number | null {
+  const entry = entries[key];
+  if (!entry || !entry.paid) return null;
+  return entry.price == null ? null : Number(entry.price);
+}
+
 async function getPricing(): Promise<PricingInfo> {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/meta/pricing`);
@@ -225,11 +246,14 @@ async function getPricing(): Promise<PricingInfo> {
     const payload = (await response.json()) as PricingResponse;
     return {
       prices: {
-        daos: payload.pricing.entries.daos.paid ? Number(payload.pricing.entries.daos.price) : null,
-        activity: Number(payload.pricing.entries.activity.price),
-        freshness: Number(payload.pricing.entries.freshness.price),
-        brief: Number(payload.pricing.entries.brief.price),
-        item: Number(payload.pricing.entries.item.price),
+        daos: priceFromEntry(payload.pricing.entries, 'daos'),
+        activity: priceFromEntry(payload.pricing.entries, 'activity'),
+        governanceEvents:
+          priceFromEntry(payload.pricing.entries, 'governanceEvents') ??
+          priceFromEntry(payload.pricing.entries, 'activity'),
+        freshness: priceFromEntry(payload.pricing.entries, 'freshness'),
+        brief: priceFromEntry(payload.pricing.entries, 'brief'),
+        item: priceFromEntry(payload.pricing.entries, 'item'),
       },
       source: 'live',
       token: payload.pricing.token,
@@ -242,6 +266,39 @@ async function getPricing(): Promise<PricingInfo> {
       token: 'usdc',
       network: 'base',
     };
+  }
+}
+
+function parseNonNegativeInteger(value: string, label: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative integer.`);
+  }
+  return parsed;
+}
+
+function parsePositiveInteger(value: string, label: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${label} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function validateGovernanceEventTypes(value: string): void {
+  const requested = value
+    .split(',')
+    .map((eventType) => eventType.trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    throw new Error('--event-types must include at least one governance event type.');
+  }
+
+  const unsupported = requested.filter((eventType) => !GOVERNANCE_EVENT_TYPES.has(eventType));
+
+  if (unsupported.length > 0) {
+    throw new Error(`Unsupported governance event type(s): ${unsupported.join(', ')}`);
   }
 }
 
@@ -308,6 +365,8 @@ async function printBudget(amountUsd: string): Promise<void> {
   const recommendationRequests = {
     daos: typeof requests.daos === 'number' ? requests.daos : Number.MAX_SAFE_INTEGER,
     activity: typeof requests.activity === 'number' ? requests.activity : Number.MAX_SAFE_INTEGER,
+    governanceEvents:
+      typeof requests.governanceEvents === 'number' ? requests.governanceEvents : Number.MAX_SAFE_INTEGER,
     freshness: typeof requests.freshness === 'number' ? requests.freshness : Number.MAX_SAFE_INTEGER,
     brief: typeof requests.brief === 'number' ? requests.brief : Number.MAX_SAFE_INTEGER,
     item: typeof requests.item === 'number' ? requests.item : Number.MAX_SAFE_INTEGER,
@@ -404,6 +463,54 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
     printJson(data);
   },
 
+  async 'governance-events'(args) {
+    const params = new URLSearchParams();
+    const daoId = getArgValue(args, '--dao');
+    const startMs = getArgValue(args, '--start-ms');
+    const endMs = getArgValue(args, '--end-ms');
+    const hours = getArgValue(args, '--hours');
+    const limit = getArgValue(args, '--limit');
+    const eventTypes = getArgValue(args, '--event-types');
+
+    if (daoId) params.set('dao_id', daoId);
+    if (limit) {
+      const parsedLimit = parsePositiveInteger(limit, '--limit');
+      if (parsedLimit > 200) {
+        throw new Error('--limit must be between 1 and 200.');
+      }
+      params.set('limit', String(parsedLimit));
+    }
+    if (eventTypes) {
+      validateGovernanceEventTypes(eventTypes);
+      params.set('event_types', eventTypes);
+    }
+
+    if (startMs || endMs) {
+      if (!startMs || !endMs) {
+        throw new Error('Use both --start-ms and --end-ms, or use --hours for a relative window.');
+      }
+      const parsedStartMs = parseNonNegativeInteger(startMs, '--start-ms');
+      const parsedEndMs = parseNonNegativeInteger(endMs, '--end-ms');
+      if (parsedEndMs <= parsedStartMs) {
+        throw new Error('--end-ms must be greater than --start-ms.');
+      }
+      params.set('start_ms', String(parsedStartMs));
+      params.set('end_ms', String(parsedEndMs));
+    } else {
+      const windowHours = Number(hours || '24');
+      if (!Number.isFinite(windowHours) || windowHours <= 0) {
+        throw new Error('--hours must be a positive number.');
+      }
+      const end = Date.now();
+      const start = end - windowHours * 60 * 60 * 1000;
+      params.set('start_ms', String(Math.floor(start)));
+      params.set('end_ms', String(Math.floor(end)));
+    }
+
+    const data = await apiCall(`/v1/governance-events?${params.toString()}`);
+    printJson(data);
+  },
+
   async brief(args) {
     const daoId = args._[0];
     if (!daoId) {
@@ -461,7 +568,8 @@ Wallet storage:
 Environment:
   DEGOV_AGENT_API_BASE_URL      default ${API_BASE_URL}
   DEGOV_AGENT_WALLET_PATH       optional wallet file override
-  DEGOV_AGENT_WALLET_PASSPHRASE required for non-interactive encrypted wallet use
+  DEGOV_AGENT_WALLET_PASSPHRASE explicit passphrase for non-interactive encrypted wallet use
+  DEGOV_AGENT_WALLET_PASSPHRASE_PATH optional passphrase file override
 
 Commands:
   wallet init                   create or reuse local payment wallet
@@ -470,6 +578,7 @@ Commands:
   budget --usd 1                estimate requests using live API pricing
   daos                          list DAOs (free)
   activity [--dao ens] [--hours 24] [--limit 10] [--types proposal,forum_topic] [--governance]
+  governance-events [--hours 24 | --start-ms 123 --end-ms 456] [--dao ens] [--limit 200] [--event-types proposal_created,...]
   brief <dao-id> [--activity-limit 6]
   item <proposal|forum_topic> <external-id>
   freshness

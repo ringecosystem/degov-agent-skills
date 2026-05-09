@@ -6,8 +6,8 @@
   "scripts": {
     "cli": "tsx degov-client.ts",
     "check": "pnpm run typecheck && pnpm exec tsx degov-client.ts help",
-    "format": "prettier --write \"../../../README.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
-    "format:check": "prettier --check \"../../../README.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
+    "format": "prettier --write \"../../../README.md\" \"../../../AGENTS.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
+    "format:check": "prettier --check \"../../../README.md\" \"../../../AGENTS.md\" \"../SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
     "typecheck": "tsc --noEmit",
     "wallet:init": "pnpm exec tsx degov-client.ts wallet init",
     "wallet:address": "pnpm exec tsx degov-client.ts wallet address",

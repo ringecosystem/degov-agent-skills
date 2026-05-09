@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createInterface } from 'node:readline/promises';
-import { createPublicClient, formatUnits, http, parseAbi } from 'viem';
+import { createPublicClient, createWalletClient, formatUnits, http, parseAbi } from 'viem';
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 import { base } from 'viem/chains';
 
@@ -11,12 +11,12 @@ const WALLET_FILE_MODE = 0o600;
 const DEFAULT_STATE_DIR = path.join(os.homedir(), '.agents', 'state', 'dao-governance');
 export const DEFAULT_WALLET_PATH = path.join(DEFAULT_STATE_DIR, 'wallet.json');
 export const DEFAULT_PASSPHRASE_PATH = path.join(DEFAULT_STATE_DIR, 'wallet-passphrase');
-const LEGACY_WALLET_PATHS = [
-  path.join(os.homedir(), '.codex', 'memories', 'degov-agent-skills', 'dao-governance-wallet.json'),
-];
 
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const USDC_ABI = parseAbi(['function balanceOf(address) view returns (uint256)']);
+const USDC_ABI = parseAbi([
+  'function balanceOf(address) view returns (uint256)',
+  'function transfer(address,uint256) returns (bool)',
+]);
 
 interface EncryptedWalletPayload {
   algorithm: string;
@@ -29,7 +29,6 @@ interface EncryptedWalletPayload {
 
 interface WalletFile {
   createdAt: string;
-  migratedAt?: string;
   address: `0x${string}`;
   privateKey?: `0x${string}`;
   crypto?: EncryptedWalletPayload;
@@ -46,30 +45,13 @@ export interface WalletBalance {
   formatted: string;
 }
 
-function uniquePaths(paths: string[]): string[] {
-  return Array.from(new Set(paths));
-}
-
 export function getDefaultWalletPath(): string {
   return process.env.DEGOV_AGENT_WALLET_PATH || DEFAULT_WALLET_PATH;
 }
 
-function getWalletSearchPaths(): string[] {
-  const override = process.env.DEGOV_AGENT_WALLET_PATH;
-  if (override) {
-    return [override];
-  }
-
-  return uniquePaths([DEFAULT_WALLET_PATH, ...LEGACY_WALLET_PATHS]);
-}
-
 function findExistingWalletPath(): string | null {
-  for (const candidate of getWalletSearchPaths()) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return null;
+  const walletPath = getDefaultWalletPath();
+  return fs.existsSync(walletPath) ? walletPath : null;
 }
 
 function ensureWalletDir(walletPath: string): void {
@@ -151,6 +133,8 @@ function getOrCreateStoredPassphrase(): string {
     return existing;
   }
 
+  // Non-interactive agents need deterministic access to their own wallet after
+  // initialization, but the passphrase must still live outside the repository.
   const passphrase = generatePassphrase();
   writeSecretFile(getPassphrasePath(), passphrase);
   return passphrase;
@@ -302,66 +286,27 @@ export async function initWallet(): Promise<{
   };
 }
 
-export async function migrateWallet(): Promise<{
-  sourceWalletPath: string;
-  walletPath: string;
-  migrated: boolean;
-  moved: boolean;
-  address: `0x${string}`;
-  encrypted: boolean;
-}> {
-  const sourceWalletPath = findExistingWalletPath();
-  if (!sourceWalletPath) {
-    throw new Error('Wallet not initialized. Run: pnpm exec tsx degov-client.ts wallet init');
-  }
-
-  const sourceWallet = readWalletFile(sourceWalletPath);
-  if (!sourceWallet?.address) {
-    throw new Error('Wallet file is incomplete.');
-  }
-
-  const targetWalletPath = getDefaultWalletPath();
-  const moved = sourceWalletPath !== targetWalletPath;
-
-  if (sourceWallet.crypto && sourceWalletPath === targetWalletPath) {
-    return {
-      sourceWalletPath,
-      walletPath: targetWalletPath,
-      migrated: false,
-      moved: false,
-      address: sourceWallet.address,
-      encrypted: true,
-    };
-  }
-
-  let cryptoPayload = sourceWallet.crypto;
-  if (!cryptoPayload) {
-    if (!sourceWallet.privateKey) {
-      throw new Error('Wallet file is missing secret material.');
-    }
-    const passphrase = await resolvePassphrase({ confirm: true });
-    cryptoPayload = encryptPrivateKey(sourceWallet.privateKey, passphrase);
-  }
-
-  writeWalletFile(targetWalletPath, {
-    createdAt: sourceWallet.createdAt || new Date().toISOString(),
-    migratedAt: new Date().toISOString(),
-    address: sourceWallet.address,
-    crypto: cryptoPayload,
+export async function transferUsdc(
+  to: `0x${string}`,
+  amount: bigint
+): Promise<{ hash: `0x${string}`; from: `0x${string}` }> {
+  const { account } = await getAccount();
+  const walletClient = createWalletClient({
+    account,
+    chain: base,
+    transport: http('https://mainnet.base.org'),
   });
 
-  if (moved && fs.existsSync(sourceWalletPath)) {
-    fs.rmSync(sourceWalletPath, { force: true });
-  }
+  // The wallet client signs a normal ERC-20 transfer from the local payment
+  // wallet. The wallet still needs a small amount of ETH on Base to pay gas.
+  const hash = await walletClient.writeContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'transfer',
+    args: [to, amount],
+  });
 
-  return {
-    sourceWalletPath,
-    walletPath: targetWalletPath,
-    migrated: true,
-    moved,
-    address: sourceWallet.address,
-    encrypted: true,
-  };
+  return { hash, from: account.address };
 }
 
 export async function getUsdcBalance(address: `0x${string}`): Promise<WalletBalance> {

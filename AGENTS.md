@@ -38,35 +38,6 @@ pnpm exec tsx degov-client.ts freshness
 
 Free endpoints should be used before paid endpoints when they are enough. Paid endpoints require a dedicated local Base wallet funded with USDC and must only be used after the user agrees to the paid Degov Agent API path.
 
-## Development workflow
-
-Follow Bear's standard repository hygiene workflow.
-
-1. Do not edit the canonical checkout directly for feature or fix work.
-2. Start from the canonical repository root and update `main` first:
-
-```bash
-git checkout main
-git pull --ff-only origin main
-```
-
-3. Create a repo-local Hermes-style worktree:
-
-```bash
-id="docs-or-fix-short-name-$(date +%Y%m%d%H%M%S)"
-branch="hermes/${id}"
-wt=".worktrees/hermes-${id}"
-git worktree add -b "$branch" "$wt" origin/main
-cd "$wt"
-```
-
-If the session is already running under Hermes built-in worktree mode (`hermes -w`), use that worktree instead of creating another one.
-
-4. Make changes only inside the worktree.
-5. Keep local-only agent state out of git. Do not commit `.hermes/`, wallet files, passphrase files, `.env`, logs, or runtime state.
-6. Commit, push, and open a GitHub PR.
-7. Do not merge the PR unless the user explicitly asks for merge after review.
-
 ## Dependency and validation commands
 
 Most validation runs from the scripts package:
@@ -120,19 +91,3 @@ pnpm run format
   1. Use Degov Agent API
   2. Use web search only
 - If the user declines paid API use, proceed with web search and do not keep pushing wallet setup.
-
-## PR expectations
-
-Use conventional commits, for example:
-
-```bash
-git commit -m "docs: add agent development guide"
-```
-
-Open PRs with a concise summary and a test plan. For this repository, a typical PR body should include:
-
-- Summary of documentation, skill, or CLI changes.
-- Validation commands run and their results.
-- Any paid-call or wallet behavior affected by the change.
-
-After opening the PR, leave it unmerged for user review unless explicitly instructed otherwise.

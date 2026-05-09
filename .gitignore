@@ -1,5 +1,7 @@
 node_modules/
 .pnpm-store/
+.worktrees/
+.hermes/
 .DS_Store
 .env
 *.log

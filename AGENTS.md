@@ -4,14 +4,12 @@ This repository is the external home for DeGov agent skills. Its main purpose is
 
 ## Repository map
 
-- `README.md`: short repository overview, current behavior summary, and local validation/install commands.
+- `README.md`: public repository overview, usage summary, and safety guidance.
 - `skills/dao-governance/SKILL.md`: the user-facing agent skill. It defines when to use DeGov governance data, how to choose between API and web sources, how to ask for paid-call consent, and how to write answers.
-- `skills/dao-governance/API_COMPATIBILITY.md`: concise compatibility notes from the latest `degov-agent-api` main-branch alignment pass.
 - `skills/dao-governance/scripts/README.md`: operator-facing notes for the bundled CLI helper.
 - `skills/dao-governance/scripts/degov-client.ts`: TypeScript CLI for Degov Agent API access, including DAO discovery, budgets, activity, event-time governance events, briefs, item lookup, freshness, and health checks.
 - `skills/dao-governance/scripts/wallet-store.ts`: local Base wallet storage, encryption, migration, passphrase handling, and USDC balance lookup.
 - `scripts/smoke-test-dao-governance.sh`: repeatable local smoke tests. It defaults to deterministic local checks; live free, wallet, and paid checks are explicit opt-ins.
-- `scripts/install-local-skill.sh`: installs `skills/dao-governance` into an isolated agents home or backs up and updates the real `~/.agents` copy.
 - `.github/workflows/ci.yml`: repository CI for documentation/script formatting, shell syntax, TypeScript compilation, and CLI startup.
 
 ## Core purpose
@@ -47,8 +45,6 @@ Paid endpoints:
 `/v1/governance-events` is the event-time feed used by Realtime Signal-style workflows. It requires `start_ms` and `end_ms`, with optional `dao_id`, `limit`, and `event_types` filters. Use it when timing semantics matter more than a generic last-updated activity feed.
 
 Use free endpoints when they are enough. Use paid endpoints only after the user explicitly chooses the Degov Agent API path.
-
-The backend also supports an internal-token paid API bypass for trusted first-party runtime services. That mechanism is intentionally not part of the public external skill path and must not be documented as something ordinary agents or users should configure.
 
 ## CLI capabilities
 
@@ -106,7 +102,7 @@ Good answers should be plain-language, source-aware, and detailed enough to be u
 
 ## Documentation conventions
 
-When API behavior, CLI commands, wallet behavior, paid-call rules, or testing/install flows change, keep the related documentation synchronized:
+When public API behavior, CLI commands, wallet behavior, or paid-call rules change, keep the related documentation synchronized:
 
 - Root `README.md`
 - `skills/dao-governance/SKILL.md`
@@ -115,24 +111,6 @@ When API behavior, CLI commands, wallet behavior, paid-call rules, or testing/in
 
 Prefer durable repository knowledge here. Avoid personal workflow instructions, branch conventions, review preferences, or developer-specific process notes.
 
-## Local validation conventions
-
-Use the root smoke-test wrapper for repeatable checks:
-
-```bash
-scripts/smoke-test-dao-governance.sh --offline
-scripts/smoke-test-dao-governance.sh --free-api
-scripts/smoke-test-dao-governance.sh --free-api --wallet
-```
-
-Paid checks are opt-in:
-
-```bash
-scripts/smoke-test-dao-governance.sh --paid
-```
-
-Use `scripts/install-local-skill.sh` to test skill installation in an isolated target before updating the real `~/.agents` copy.
-
 ## Security guardrails
 
 - Never ask users to paste private keys.
@@ -140,3 +118,4 @@ Use `scripts/install-local-skill.sh` to test skill installation in an isolated t
 - Do not hardcode paid API pricing in long-lived docs when live pricing is available.
 - Keep payment wallets dedicated to small API fees only; do not encourage transferring large balances.
 - Treat API data as evidence, not as final prose. The agent remains responsible for explaining context and uncertainty clearly.
+- Keep this repository focused on the external skill contract; do not document private service-side implementation paths.

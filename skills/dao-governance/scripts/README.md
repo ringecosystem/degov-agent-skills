@@ -50,8 +50,6 @@ Paid:
 
 `/v1/governance-events` is the event-time governance feed. It requires `start_ms` and `end_ms` at the HTTP level. The CLI provides a convenience `--hours` option that builds a relative window automatically.
 
-The backend has an internal-token bypass for trusted first-party services. Do not use or document that path as the public external skill flow. External agents should use free public endpoints plus x402-paid requests after consent.
-
 ## Wallet storage
 
 The generated wallet is stored outside git:
@@ -63,10 +61,18 @@ New wallets are encrypted at rest. For non-interactive use, set:
 
 - `DEGOV_AGENT_WALLET_PASSPHRASE`
 
-If that variable is not set, the CLI creates and reuses an internal passphrase file automatically:
+If that variable is not set, the CLI creates and reuses a local passphrase file automatically:
 
 - default: `~/.agents/state/dao-governance/wallet-passphrase`
 - override with `DEGOV_AGENT_WALLET_PASSPHRASE_PATH`
+
+To return unused USDC from the local payment wallet, enter the destination address and amount on the command line:
+
+```bash
+pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+```
+
+The amount is denominated in USDC and supports up to 6 decimal places. The wallet also needs a small amount of ETH on Base to pay gas for the ERC-20 transfer.
 
 ## Budget guide
 
@@ -79,6 +85,7 @@ If the pricing metadata endpoint is unavailable, the CLI falls back to the curre
 pnpm exec tsx degov-client.ts wallet init
 pnpm exec tsx degov-client.ts wallet address
 pnpm exec tsx degov-client.ts wallet balance
+pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
 pnpm exec tsx degov-client.ts budget --usd 1
 pnpm exec tsx degov-client.ts daos
 pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
@@ -94,41 +101,3 @@ pnpm exec tsx degov-client.ts health
 
 `health`, `budget`, and `daos` work without a funded wallet.
 `activity`, `governance-events`, `brief`, `item`, and `freshness` require the x402 wallet to be initialized and funded.
-
-## Repeatable smoke tests
-
-From the repository root:
-
-```bash
-scripts/smoke-test-dao-governance.sh --offline
-scripts/smoke-test-dao-governance.sh --free-api
-scripts/smoke-test-dao-governance.sh --free-api --wallet
-```
-
-The wallet check uses `/tmp` state and does not modify the real `~/.agents` wallet.
-
-Paid checks are opt-in:
-
-```bash
-scripts/smoke-test-dao-governance.sh --paid
-```
-
-## Testing skill installation
-
-Install into an isolated agents home:
-
-```bash
-scripts/install-local-skill.sh --target /tmp/degov-agent-skills-home --mode copy
-```
-
-Use symlink mode for iterative local development:
-
-```bash
-scripts/install-local-skill.sh --target /tmp/degov-agent-skills-home --mode symlink
-```
-
-Update the real `~/.agents` copy only after validation passes. The helper backs up the existing skill by default:
-
-```bash
-scripts/install-local-skill.sh --real --mode copy
-```

@@ -1,73 +1,81 @@
 # degov-agent-skills
 
-External home for Degov agent skills.
+Reusable agent skills for DeGov governance research.
 
-## Repository layout
+This repository packages the `dao-governance` skill and its helper CLI so agents can answer DAO governance questions with evidence instead of guesses. The skill is designed for external use: it explains when to use Degov Agent API data, when to fall back to web sources, and how to ask for consent before paid API calls.
 
-- `skills/dao-governance/`: DAO governance research skill backed by `degov-agent-api`
-- `skills/dao-governance/scripts/`: TypeScript CLI for wallet management and API calls
-- `scripts/smoke-test-dao-governance.sh`: repeatable local smoke test entrypoint
-- `scripts/install-local-skill.sh`: isolated or real `.agents` skill install helper
+## What is included
 
-## Current skill behavior
+- `skills/dao-governance/SKILL.md`: the agent-facing governance research guide.
+- `skills/dao-governance/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
 
-The `dao-governance` skill:
+## What the skill does
 
-- uses `degov-agent-api` as the primary evidence source
-- defaults to the deployed API at `https://agent-api.degov.ai`
-- treats `/health`, `/v1/meta/pricing`, and `/v1/daos` as free discovery endpoints
-- pays for research endpoints with x402 on Base mainnet USDC
-- supports `/v1/activity`, `/v1/governance-events`, `/v1/system/freshness`, `/v1/daos/:daoId/brief`, and `/v1/items/:kind/:externalId`
-- creates a dedicated local wallet instead of asking users for a raw private key
-- stores that wallet outside git at `~/.agents/state/dao-governance/wallet.json`
-- manages an internal local wallet passphrase automatically unless an explicit env override is provided
-- shows budget-based USDC top-up suggestions when displaying the wallet address for funding
-- asks the user before using a paid endpoint, recommends the API-backed path as more accurate, and falls back to web search if the user declines
+The `dao-governance` skill helps agents:
 
-The backend also has an internal-token bypass for trusted first-party services. This repository documents that fact only so agents do not confuse it with the public skill path. The external `dao-governance` skill should continue to use public free endpoints and x402-paid calls, not internal tokens.
+- discover covered DAOs through free public endpoints
+- use Degov Agent API as the primary evidence source when recent governance data matters
+- use web search as a secondary source when API coverage is missing, stale, or too shallow
+- ask the user before making paid x402 API calls
+- turn API results into clear, source-aware explanations instead of raw JSON dumps
 
-## Local validation
+The default API endpoint is:
 
-Run deterministic local checks from the repository root:
-
-```bash
-scripts/smoke-test-dao-governance.sh --offline
+```text
+https://agent-api.degov.ai
 ```
 
-Run live free-endpoint checks:
+## Public API model
 
-```bash
-scripts/smoke-test-dao-governance.sh --free-api
+Free endpoints are available for basic discovery:
+
+- `GET /health`
+- `GET /v1/meta/pricing`
+- `GET /v1/daos`
+
+Paid research endpoints use x402 payments on Base USDC and should only be called after user consent:
+
+- `GET /v1/activity`
+- `GET /v1/governance-events`
+- `GET /v1/daos/:daoId/brief`
+- `GET /v1/items/:kind/:externalId`
+- `GET /v1/system/freshness`
+
+## Wallet safety
+
+The helper CLI creates a dedicated local wallet for small API payments. It does not ask users to paste private keys into chat.
+
+Default local wallet state is stored outside the repository:
+
+```text
+~/.agents/state/dao-governance/wallet.json
 ```
 
-Run live free-endpoint checks plus an isolated wallet flow:
+Keep wallet files, passphrases, `.env` files, logs, generated state, and other secrets out of version control.
+
+## Using the CLI helper
+
+From the helper directory:
 
 ```bash
-scripts/smoke-test-dao-governance.sh --free-api --wallet
+cd skills/dao-governance/scripts
+pnpm install
+pnpm exec tsx degov-client.ts help
 ```
 
-Paid endpoint smoke tests are opt-in because they require a funded Base USDC wallet:
+Common commands:
 
 ```bash
-scripts/smoke-test-dao-governance.sh --paid
-```
-
-## Local skill installation
-
-For isolated testing, install the skill into a temporary agents home instead of overwriting the real `~/.agents` copy:
-
-```bash
-scripts/install-local-skill.sh --target /tmp/degov-agent-skills-home --mode copy
-```
-
-For iterative local development, a symlink install can be useful:
-
-```bash
-scripts/install-local-skill.sh --target /tmp/degov-agent-skills-home --mode symlink
-```
-
-Only after local checks pass, update the real `.agents` skill. The helper backs up the existing real skill by default:
-
-```bash
-scripts/install-local-skill.sh --real --mode copy
+pnpm exec tsx degov-client.ts daos
+pnpm exec tsx degov-client.ts budget --usd 1
+pnpm exec tsx degov-client.ts wallet init
+pnpm exec tsx degov-client.ts wallet address
+pnpm exec tsx degov-client.ts wallet balance
+pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
+pnpm exec tsx degov-client.ts governance-events --hours 24 --limit 200
+pnpm exec tsx degov-client.ts brief ens
+pnpm exec tsx degov-client.ts item proposal <id>
+pnpm exec tsx degov-client.ts freshness
+pnpm exec tsx degov-client.ts health
 ```

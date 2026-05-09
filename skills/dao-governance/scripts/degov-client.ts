@@ -4,10 +4,21 @@ import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
 import { decodePaymentResponseHeader, wrapFetchWithPaymentFromConfig } from '@x402/fetch';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import { DEFAULT_WALLET_PATH, getAccount, getResolvedWalletPath, getUsdcBalance, initWallet } from './wallet-store.js';
+import {
+  DEFAULT_WALLET_PATH,
+  getAccount,
+  getResolvedWalletPath,
+  getUsdcBalance,
+  initWallet,
+  transferUsdc,
+} from './wallet-store.js';
+import { parseTransferRecipient, parseUsdcTransferAmount } from './transfer-utils.js';
 
 const API_BASE_URL = process.env.DEGOV_AGENT_API_BASE_URL || 'https://agent-api.degov.ai';
 
+// Keep fallback prices in the CLI so wallet funding guidance still works when the
+// public pricing endpoint is temporarily unavailable. Live pricing remains the
+// preferred source whenever the API can be reached.
 const FALLBACK_PRICES = {
   daos: null,
   activity: 0.005,
@@ -178,6 +189,8 @@ function decodePaymentSettlement(paymentResponse: string | null): PaymentSettlem
   }
 
   try {
+    // x402 settlement metadata is useful evidence for users, but it should not
+    // break the API command if a gateway omits or changes the optional header.
     return decodePaymentResponseHeader(paymentResponse) as PaymentSettlementInfo;
   } catch {
     return null;
@@ -386,6 +399,29 @@ async function printBudget(amountUsd: string): Promise<void> {
   }
 }
 
+async function transferWalletBalance(args: ParsedArgs): Promise<void> {
+  const recipientInput = args._[0] || getArgValue(args, '--to');
+  const amountInput = args._[1] || getArgValue(args, '--amount');
+
+  if (!recipientInput || !amountInput) {
+    throw new Error('Usage: pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>');
+  }
+
+  const to = parseTransferRecipient(recipientInput);
+  const amount = parseUsdcTransferAmount(amountInput);
+  const result = await transferUsdc(to, amount);
+
+  printJson({
+    amount: amountInput,
+    asset: 'USDC',
+    from: result.from,
+    network: 'Base Mainnet',
+    raw: amount.toString(),
+    to,
+    transaction: result.hash,
+  });
+}
+
 const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
   async wallet(args) {
     const subcommand = args._[0] || 'help';
@@ -433,7 +469,17 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
       return;
     }
 
-    throw new Error('Usage: pnpm exec tsx degov-client.ts wallet <init|address|balance>');
+    if (subcommand === 'transfer') {
+      args._.shift();
+      await transferWalletBalance(args);
+      return;
+    }
+
+    throw new Error('Usage: pnpm exec tsx degov-client.ts wallet <init|address|balance|transfer>');
+  },
+
+  async transfer(args) {
+    await transferWalletBalance(args);
   },
 
   async budget(args) {
@@ -501,6 +547,9 @@ const commands: Record<string, (args: ParsedArgs) => Promise<void>> = {
       if (!Number.isFinite(windowHours) || windowHours <= 0) {
         throw new Error('--hours must be a positive number.');
       }
+      // The API models governance events by event time rather than item update
+      // time, so the CLI converts a relative window into explicit millisecond
+      // bounds before calling the endpoint.
       const end = Date.now();
       const start = end - windowHours * 60 * 60 * 1000;
       params.set('start_ms', String(Math.floor(start)));
@@ -575,6 +624,8 @@ Commands:
   wallet init                   create or reuse local payment wallet
   wallet address                show wallet address and path
   wallet balance                show Base USDC balance
+  transfer <to> <amount-usdc>   send USDC from the local payment wallet on Base
+  wallet transfer <to> <amount-usdc> same as transfer
   budget --usd 1                estimate requests using live API pricing
   daos                          list DAOs (free)
   activity [--dao ens] [--hours 24] [--limit 10] [--types proposal,forum_topic] [--governance]

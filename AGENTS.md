@@ -7,11 +7,13 @@ This repository is the external home for DeGov agent skills. Its main purpose is
 - `README.md`: public repository overview, usage summary, and safety guidance.
 - `skills/dao-governance/SKILL.md`: the user-facing governance research skill. It defines when to use DeGov governance data, how to choose between API and web sources, how to ask for paid-call consent, and how to write answers.
 - `skills/dao-governance-security/SKILL.md`: the user-facing proposal security skill. It defines a concrete rubric for checking malicious or unexpected proposal actions, funds flow, permissions, proposer/process anomalies, execution risk, uncertainty, and final analysis format.
+- `skills/dao-governance-security/examples/`: synthetic benign and risky proposal analyses used for reviewer inspection and local validation.
 - `skills/dao-governance/scripts/README.md`: operator-facing notes for the bundled CLI helper.
 - `skills/dao-governance/scripts/degov-client.ts`: TypeScript CLI for Degov Agent API access, including DAO discovery, budgets, activity, event-time governance events, briefs, item lookup, freshness, and health checks.
 - `skills/dao-governance/scripts/wallet-store.ts`: local Base wallet storage, encryption, migration, passphrase handling, and USDC balance lookup.
-- `scripts/smoke-test-dao-governance.sh`: repeatable local smoke tests. It defaults to deterministic local checks; live free, wallet, and paid checks are explicit opt-ins.
-- `.github/workflows/ci.yml`: repository CI for documentation/script formatting, shell syntax, TypeScript compilation, and CLI startup.
+- `scripts/tests/validate-dao-governance-security.py`: deterministic stdlib validator for the security skill frontmatter, required output template, and example structured analyses.
+- `scripts/tests/smoke-test-dao-governance.py`: repeatable repository-level smoke tests. It defaults to deterministic local checks; live free, wallet, and paid checks are explicit opt-ins.
+- `.github/workflows/ci.yml`: repository CI for documentation/script formatting, Python validation helpers, TypeScript compilation, and CLI startup.
 
 ## Core purpose
 

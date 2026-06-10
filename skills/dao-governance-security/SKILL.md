@@ -258,6 +258,13 @@ Recommendation: <support / oppose / abstain / wait for clarification / escalate 
 
 <2-4 sentences explaining the main risk judgment in plain language. Mention the highest-impact finding and the most important uncertainty.>
 
+### Risk summary
+
+- Highest-risk issue: <one-line summary or "none identified">
+- Sensitive effects: <fund transfers / approvals / role grants / upgrades / governance setting changes / none found / not verified>
+- Main uncertainty: <most important missing or undecoded evidence>
+- Recommended posture: <support / oppose / abstain / wait / escalate, with one short reason>
+
 ### Proposal and evidence reviewed
 
 - DAO: <name>
@@ -304,7 +311,22 @@ If no executable actions exist or they could not be found, say so explicitly and
 - <Execution/timelock monitoring action if relevant>
 ```
 
-Required sections are: `Overall risk`, `Confidence`, `Recommendation`, `Bottom line`, `Proposal and evidence reviewed`, `Executable actions checked`, `Findings`, `Uncertainties and assumptions`, and `Recommended user actions`.
+Required sections are: `Overall risk`, `Confidence`, `Recommendation`, `Bottom line`, `Risk summary`, `Proposal and evidence reviewed`, `Executable actions checked`, `Findings`, `Uncertainties and assumptions`, and `Recommended user actions`.
+
+## Examples and local validation
+
+Use the synthetic examples in `skills/dao-governance-security/examples/` to understand the expected shape of a completed analysis and to regression-check future edits:
+
+- `benign-operational-budget.md` shows a low-risk operational transfer where decoded actions, amount, recipient, proposer history, and process context match the proposal text.
+- `risky-treasury-drain-and-admin-grant.md` shows a critical-risk payload with a malicious or contradictory action, incorrect amount, suspicious recipient, suspicious proposer, and dangerous permission grant.
+
+Run the deterministic local validator after editing this skill or its examples:
+
+```bash
+pnpm run validate:dao-governance-security
+```
+
+The validator checks that this file is loadable as a skill, the required final output sections are still present, and both examples follow the structured analysis format.
 
 ## Recommendation rules
 

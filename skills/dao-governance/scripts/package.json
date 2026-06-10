@@ -7,15 +7,13 @@
     "cli": "tsx degov-client.ts",
     "check": "pnpm run typecheck && pnpm run test && pnpm exec tsx degov-client.ts help",
     "test": "tsx --test *.test.ts",
-    "format": "prettier --write \"../../../README.md\" \"../../../AGENTS.md\" \"../SKILL.md\" \"../../dao-governance-security/SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
-    "format:check": "prettier --check \"../../../README.md\" \"../../../AGENTS.md\" \"../SKILL.md\" \"../../dao-governance-security/SKILL.md\" \"./README.md\" \"./*.ts\" \"./*.json\" \"../../../.github/workflows/*.yml\" \"../../../.prettierrc.json\"",
+    "prettier": "prettier --ignore-unknown --ignore-path ../../../.prettierignore --ignore-path ../../../.gitignore",
+    "format": "pnpm run prettier --write ..",
+    "format:check": "pnpm run prettier --check ..",
     "typecheck": "tsc --noEmit",
     "wallet:init": "pnpm exec tsx degov-client.ts wallet init",
     "wallet:address": "pnpm exec tsx degov-client.ts wallet address",
-    "wallet:balance": "pnpm exec tsx degov-client.ts wallet balance",
-    "smoke:offline": "../../../scripts/smoke-test-dao-governance.sh --offline",
-    "smoke:free": "../../../scripts/smoke-test-dao-governance.sh --free-api",
-    "smoke:wallet": "../../../scripts/smoke-test-dao-governance.sh --free-api --wallet"
+    "wallet:balance": "pnpm exec tsx degov-client.ts wallet balance"
   },
   "dependencies": {
     "@x402/evm": "^2.6.0",

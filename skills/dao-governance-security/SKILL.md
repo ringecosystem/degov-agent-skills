@@ -245,7 +245,7 @@ Use this checklist to ensure coverage. A final analysis does not need to show ev
 
 ## Final output format
 
-Use this structure for user-facing analysis. Keep it readable, but do not omit required sections.
+Use this structure for user-facing analysis. Keep it readable, but do not omit required sections. Render it as normal Markdown: required fields, headings, tables, and bullets must start at column 0 (except intentionally nested bullets). Do not indent the whole response or analysis block by four spaces, because that turns the output into a Markdown code block and hides the required structure.
 
 ```markdown
 ## Governance proposal security analysis: <proposal title or ID>
@@ -349,6 +349,7 @@ Map the analysis to user action clearly:
 6. **Overstating malicious intent.** Say "the action would allow X" or "this is inconsistent with the proposal text" unless evidence supports intent.
 7. **Forgetting execution context.** A passed offchain Snapshot may still require multisig execution; an onchain proposal may have a timelock where action is still possible.
 8. **Ignoring cross-chain effects.** Governance payloads may execute on another chain through bridge/messenger contracts, so local calldata is not always the whole effect.
+9. **Indenting the final analysis as a code block.** The required fields, headings, tables, and bullets must render as Markdown. Do not prefix every line with four spaces when generating or batching analyses.
 
 ## Verification checklist before answering
 

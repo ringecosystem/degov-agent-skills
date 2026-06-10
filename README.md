@@ -1,15 +1,16 @@
 # degov-agent-skills
 
-Reusable agent skills for DeGov governance research.
+Reusable agent skills for DeGov governance research and proposal security analysis.
 
-This repository packages the `dao-governance` skill and its helper CLI so agents can answer DAO governance questions with evidence instead of guesses. The skill is designed for external use: it explains when to use Degov Agent API data, when to fall back to web sources, and how to ask for consent before paid API calls.
+This repository packages DAO governance skills so agents can answer governance questions with evidence instead of guesses and assess proposal security risks before users vote or execute. The skills are designed for external use: they explain when to use Degov Agent API data, when to fall back to web sources, how to ask for consent before paid API calls, and how to analyze governance proposals for malicious or unexpectedly risky actions.
 
 ## What is included
 
 - `skills/dao-governance/SKILL.md`: the agent-facing governance research guide.
+- `skills/dao-governance-security/SKILL.md`: the proposal security-analysis rubric for evaluating executable actions, funds flow, permissions, proposer/process anomalies, uncertainty, and recommended user actions.
 - `skills/dao-governance/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
 
-## What the skill does
+## What the skills do
 
 The `dao-governance` skill helps agents:
 
@@ -18,6 +19,14 @@ The `dao-governance` skill helps agents:
 - use web search as a secondary source when API coverage is missing, stale, or too shallow
 - ask the user before making paid x402 API calls
 - turn API results into clear, source-aware explanations instead of raw JSON dumps
+
+The `dao-governance-security` skill helps agents:
+
+- decode and compare governance proposal actions against the proposal text
+- check token/ETH amounts, recipients, allowances, upgrades, roles, ownership, and governance setting changes
+- assess proposer identity, reputation, vote/process anomalies, execution and cross-chain risk
+- classify findings with clear severity levels from Critical through Unknown
+- produce a required final analysis format with evidence, assumptions, uncertainties, and concrete recommended user actions
 
 The default API endpoint is:
 

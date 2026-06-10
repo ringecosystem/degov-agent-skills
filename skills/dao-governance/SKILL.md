@@ -28,11 +28,11 @@ Do not assume wallet setup is always the first step. First decide whether the qu
 If the user agrees to the paid path, initialize or reuse the local wallet:
 
 ```bash
-cd skills/dao-governance/scripts
-pnpm install
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
+cd skills/dao-governance
+pnpm --dir scripts install
+pnpm --dir scripts exec tsx degov-client.ts wallet init
+pnpm --dir scripts exec tsx degov-client.ts wallet address
+pnpm --dir scripts exec tsx degov-client.ts wallet balance
 ```
 
 Some notes about the wallet setup:
@@ -68,32 +68,32 @@ After that, continue with the normal workflow described in the following section
 
 ## API and command reference
 
-The script provides a command-line interface for interacting with the Degov Agent API. These are the main commands:
+The script provides a command-line interface for interacting with the Degov Agent API. Run these commands from `skills/dao-governance`; the package itself lives in the nested `scripts/` directory. These are the main commands:
 
 ```bash
 # Initialize wallet (only needed once, after user consent for the paid path)
-pnpm exec tsx degov-client.ts wallet init
+pnpm --dir scripts exec tsx degov-client.ts wallet init
 
 # Check wallet address and balance
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
+pnpm --dir scripts exec tsx degov-client.ts wallet address
+pnpm --dir scripts exec tsx degov-client.ts wallet balance
 
 # Transfer unused USDC out of the local payment wallet
-pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+pnpm --dir scripts exec tsx degov-client.ts transfer <to-address> <amount-usdc>
 
 # Check current API pricing and budget for a given USD amount
-pnpm exec tsx degov-client.ts budget --usd 1
+pnpm --dir scripts exec tsx degov-client.ts budget --usd 1
 
 # Explore DAOs, recent activity, event-time governance events, briefs, specific items,
 # data freshness, and health status. health, budget, and daos are available without a
 # funded wallet.
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts activity --hours 48 --limit 10
-pnpm exec tsx degov-client.ts governance-events --hours 24 --limit 200
-pnpm exec tsx degov-client.ts brief ens
-pnpm exec tsx degov-client.ts item proposal <id>
-pnpm exec tsx degov-client.ts freshness
-pnpm exec tsx degov-client.ts health
+pnpm --dir scripts exec tsx degov-client.ts daos
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 48 --limit 10
+pnpm --dir scripts exec tsx degov-client.ts governance-events --hours 24 --limit 200
+pnpm --dir scripts exec tsx degov-client.ts brief ens
+pnpm --dir scripts exec tsx degov-client.ts item proposal <id>
+pnpm --dir scripts exec tsx degov-client.ts freshness
+pnpm --dir scripts exec tsx degov-client.ts health
 ```
 
 These commands wrap the Degov Agent API endpoints. You can also call the API directly over HTTP. The main endpoints are:
@@ -168,8 +168,8 @@ When a question needs more than one API call:
 For wide recent-activity scans, do not rely only on one mixed `activity` request with a high limit. The backend caps candidate sets, so for fuller coverage fetch proposals and forum topics separately, then merge/deduplicate in the agent:
 
 ```bash
-pnpm exec tsx degov-client.ts activity --hours 168 --limit 200 --types proposal
-pnpm exec tsx degov-client.ts activity --hours 168 --limit 200 --types forum_topic
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 168 --limit 200 --types proposal
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 168 --limit 200 --types forum_topic
 ```
 
 Use `governance-events` instead of `activity` when the answer depends on the event's own timestamp rather than the item's latest update time.

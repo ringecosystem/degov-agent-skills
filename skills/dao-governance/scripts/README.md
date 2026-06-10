@@ -12,10 +12,10 @@ If the user agrees, complete the wallet setup below. If the user declines, use w
 ## Quick start
 
 ```bash
-cd skills/dao-governance/scripts
-pnpm install
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
+cd skills/dao-governance
+pnpm --dir scripts install
+pnpm --dir scripts exec tsx degov-client.ts wallet init
+pnpm --dir scripts exec tsx degov-client.ts wallet address
 ```
 
 Both commands show the Base wallet address and suggested top-up ranges based on current API pricing, so users have a rough recharge reference before funding.
@@ -25,12 +25,22 @@ Successful paid API calls also print the settlement transaction hash together wi
 Fund the displayed Base address with USDC, then test:
 
 ```bash
-pnpm exec tsx degov-client.ts wallet balance
-pnpm exec tsx degov-client.ts daos
+pnpm --dir scripts exec tsx degov-client.ts wallet balance
+pnpm --dir scripts exec tsx degov-client.ts daos
 ```
 
 By default, the CLI targets the deployed API at `https://agent-api.degov.ai`.
 Set `DEGOV_AGENT_API_BASE_URL` only when you want to use a local or alternate API.
+
+## Local package checks
+
+Run helper-package checks from the governance skill directory so they stay scoped to `skills/dao-governance`:
+
+```bash
+cd skills/dao-governance
+pnpm --dir scripts run format:check
+pnpm --dir scripts run check
+```
 
 ## Free and paid APIs
 
@@ -69,7 +79,7 @@ If that variable is not set, the CLI creates and reuses a local passphrase file 
 To return unused USDC from the local payment wallet, enter the destination address and amount on the command line:
 
 ```bash
-pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+pnpm --dir scripts exec tsx degov-client.ts transfer <to-address> <amount-usdc>
 ```
 
 The amount is denominated in USDC and supports up to 6 decimal places. The wallet also needs a small amount of ETH on Base to pay gas for the ERC-20 transfer.
@@ -82,21 +92,21 @@ If the pricing metadata endpoint is unavailable, the CLI falls back to the curre
 ## Commands
 
 ```bash
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
-pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
-pnpm exec tsx degov-client.ts budget --usd 1
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 200 --types proposal
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 200 --types forum_topic
-pnpm exec tsx degov-client.ts governance-events --hours 24 --limit 200
-pnpm exec tsx degov-client.ts governance-events --start-ms <ms> --end-ms <ms> --event-types proposal_created,forum_discussion_active
-pnpm exec tsx degov-client.ts brief ens
-pnpm exec tsx degov-client.ts item proposal <id>
-pnpm exec tsx degov-client.ts freshness
-pnpm exec tsx degov-client.ts health
+pnpm --dir scripts exec tsx degov-client.ts wallet init
+pnpm --dir scripts exec tsx degov-client.ts wallet address
+pnpm --dir scripts exec tsx degov-client.ts wallet balance
+pnpm --dir scripts exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+pnpm --dir scripts exec tsx degov-client.ts budget --usd 1
+pnpm --dir scripts exec tsx degov-client.ts daos
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 24 --limit 10
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 24 --limit 200 --types proposal
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 24 --limit 200 --types forum_topic
+pnpm --dir scripts exec tsx degov-client.ts governance-events --hours 24 --limit 200
+pnpm --dir scripts exec tsx degov-client.ts governance-events --start-ms <ms> --end-ms <ms> --event-types proposal_created,forum_discussion_active
+pnpm --dir scripts exec tsx degov-client.ts brief ens
+pnpm --dir scripts exec tsx degov-client.ts item proposal <id>
+pnpm --dir scripts exec tsx degov-client.ts freshness
+pnpm --dir scripts exec tsx degov-client.ts health
 ```
 
 `health`, `budget`, and `daos` work without a funded wallet.

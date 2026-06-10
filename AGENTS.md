@@ -1,22 +1,27 @@
 # AGENTS.md
 
-This repository is the external home for DeGov agent skills. Its main purpose is to package reusable agent knowledge for DAO governance research, with a focus on making answers evidence-based, source-aware, and safe around paid API access.
+This repository is the external home for DeGov agent skills. Its main purpose is to package reusable agent knowledge for DAO governance research and proposal security analysis, with a focus on making answers evidence-based, source-aware, risk-aware, and safe around paid API access.
 
 ## Repository map
 
 - `README.md`: public repository overview, usage summary, and safety guidance.
-- `skills/dao-governance/SKILL.md`: the user-facing agent skill. It defines when to use DeGov governance data, how to choose between API and web sources, how to ask for paid-call consent, and how to write answers.
+- `skills/dao-governance/SKILL.md`: the user-facing governance research skill. It defines when to use DeGov governance data, how to choose between API and web sources, how to ask for paid-call consent, and how to write answers.
+- `skills/dao-governance-security/SKILL.md`: the user-facing proposal security skill. It defines a concrete rubric for checking malicious or unexpected proposal actions, funds flow, permissions, proposer/process anomalies, execution risk, uncertainty, and final analysis format.
+- `skills/dao-governance-security/examples/`: synthetic benign and risky proposal analyses used for reviewer inspection and local validation.
 - `skills/dao-governance/scripts/README.md`: operator-facing notes for the bundled CLI helper.
 - `skills/dao-governance/scripts/degov-client.ts`: TypeScript CLI for Degov Agent API access, including DAO discovery, budgets, activity, event-time governance events, briefs, item lookup, freshness, and health checks.
 - `skills/dao-governance/scripts/wallet-store.ts`: local Base wallet storage, encryption, migration, passphrase handling, and USDC balance lookup.
-- `scripts/smoke-test-dao-governance.sh`: repeatable local smoke tests. It defaults to deterministic local checks; live free, wallet, and paid checks are explicit opt-ins.
-- `.github/workflows/ci.yml`: repository CI for documentation/script formatting, shell syntax, TypeScript compilation, and CLI startup.
+- `scripts/tests/validate-dao-governance-security.py`: deterministic stdlib validator for the security skill frontmatter, required output template, and example structured analyses.
+- `scripts/tests/smoke-test-dao-governance.py`: repeatable repository-level smoke tests. It defaults to deterministic local checks; live free, wallet, and paid checks are explicit opt-ins.
+- `.github/workflows/ci.yml`: repository CI for documentation/script formatting, Python validation helpers, TypeScript compilation, and CLI startup.
 
 ## Core purpose
 
 The `dao-governance` skill helps agents answer Web3 DAO governance questions without inventing facts. It treats `degov-agent-api` as the primary evidence source for supported DAO data, then uses web search as a secondary layer when API data is missing, stale, too shallow, or needs source verification.
 
-The intended user experience is not a raw API dump. Agents should turn governance data into clear explanations that identify what happened, why it matters, which DAO it affects, and what sources support the answer.
+The `dao-governance-security` skill helps agents evaluate whether a specific governance proposal is malicious, unexpectedly risky, or safe enough to support from a security perspective. It focuses on executable actions, token/native-asset movement, contract calls, permissions, proposer reputation, process anomalies, execution risk, uncertainty, and user-facing recommendations.
+
+The intended user experience is not a raw API dump or a vague risk label. Agents should turn governance data into clear explanations that identify what happened, why it matters, which DAO it affects, what risks were found, what sources support the answer, and what the user should do next.
 
 ## Degov Agent API model
 
@@ -106,6 +111,7 @@ When public API behavior, CLI commands, wallet behavior, or paid-call rules chan
 
 - Root `README.md`
 - `skills/dao-governance/SKILL.md`
+- `skills/dao-governance-security/SKILL.md` when security-analysis behavior, severity definitions, or output expectations change
 - `skills/dao-governance/scripts/README.md`
 - This `AGENTS.md` file when the shared repository knowledge changes
 

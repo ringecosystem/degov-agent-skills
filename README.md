@@ -1,15 +1,17 @@
 # degov-agent-skills
 
-Reusable agent skills for DeGov governance research.
+Reusable agent skills for DeGov governance research and proposal security analysis.
 
-This repository packages the `dao-governance` skill and its helper CLI so agents can answer DAO governance questions with evidence instead of guesses. The skill is designed for external use: it explains when to use Degov Agent API data, when to fall back to web sources, and how to ask for consent before paid API calls.
+This repository packages DAO governance skills so agents can answer governance questions with evidence instead of guesses and assess proposal security risks before users vote or execute. The skills are designed for external use: they explain when to use Degov Agent API data, when to fall back to web sources, how to ask for consent before paid API calls, and how to analyze governance proposals for malicious or unexpectedly risky actions.
 
 ## What is included
 
 - `skills/dao-governance/SKILL.md`: the agent-facing governance research guide.
+- `skills/dao-governance-security/SKILL.md`: the proposal security-analysis rubric for evaluating executable actions, funds flow, permissions, proposer/process anomalies, uncertainty, and recommended user actions.
 - `skills/dao-governance/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
+- `scripts/tests/`: repository-owned validation and smoke-test entry points used by CI and local checks.
 
-## What the skill does
+## What the skills do
 
 The `dao-governance` skill helps agents:
 
@@ -18,6 +20,33 @@ The `dao-governance` skill helps agents:
 - use web search as a secondary source when API coverage is missing, stale, or too shallow
 - ask the user before making paid x402 API calls
 - turn API results into clear, source-aware explanations instead of raw JSON dumps
+
+The `dao-governance-security` skill helps agents:
+
+- decode and compare governance proposal actions against the proposal text
+- check token/ETH amounts, recipients, allowances, upgrades, roles, ownership, and governance setting changes
+- assess proposer identity, reputation, vote/process anomalies, execution and cross-chain risk
+- classify findings with clear severity levels from Critical through Unknown
+- produce a required final analysis format with evidence, assumptions, uncertainties, and concrete recommended user actions
+
+## Proposal security examples and validation
+
+The security skill includes synthetic example analyses that can be used for local review without querying live APIs:
+
+- `skills/dao-governance-security/examples/benign-operational-budget.md`: a low-risk operational treasury transfer where proposal text, decoded action, recipient, amount, proposer history, and process context line up.
+- `skills/dao-governance-security/examples/risky-treasury-drain-and-admin-grant.md`: a critical-risk proposal where decoded actions contradict the prose, move an incorrect amount to a suspicious recipient, come from a suspicious proposer, and grant a dangerous permission.
+
+Run the deterministic validator from the repository root:
+
+```bash
+pnpm run validate:dao-governance-security
+```
+
+The validator checks that `skills/dao-governance-security/SKILL.md` is loadable as a skill, that its required final-analysis sections are present, and that both examples follow the structured output contract. The same check is included in the offline smoke test:
+
+```bash
+pnpm run smoke:dao-governance
+```
 
 The default API endpoint is:
 
@@ -53,29 +82,49 @@ Default local wallet state is stored outside the repository:
 
 Keep wallet files, passphrases, `.env` files, logs, generated state, and other secrets out of version control.
 
-## Using the CLI helper
+## Repository checks and formatting
 
-From the helper directory:
+Repository-wide checks are exposed from the repository root. The root formatter scans the repository recursively for Prettier-supported files while respecting `.prettierignore` and `.gitignore`:
 
 ```bash
-cd skills/dao-governance/scripts
-pnpm install
-pnpm exec tsx degov-client.ts help
+pnpm run format
+pnpm run format:check
+pnpm run validate:dao-governance-security
+pnpm run smoke:dao-governance
+```
+
+The dao-governance helper package keeps local checks scoped to the governance skill. Run these from the skill directory; the package itself lives in `scripts/`:
+
+```bash
+cd skills/dao-governance
+pnpm --dir scripts run format
+pnpm --dir scripts run format:check
+pnpm --dir scripts run check
+```
+
+## Using the CLI helper
+
+From the skill directory:
+
+```bash
+cd skills/dao-governance
+pnpm --dir scripts install
+pnpm --dir scripts exec tsx degov-client.ts help
 ```
 
 Common commands:
 
 ```bash
-pnpm exec tsx degov-client.ts daos
-pnpm exec tsx degov-client.ts budget --usd 1
-pnpm exec tsx degov-client.ts wallet init
-pnpm exec tsx degov-client.ts wallet address
-pnpm exec tsx degov-client.ts wallet balance
-pnpm exec tsx degov-client.ts transfer <to-address> <amount-usdc>
-pnpm exec tsx degov-client.ts activity --hours 24 --limit 10
-pnpm exec tsx degov-client.ts governance-events --hours 24 --limit 200
-pnpm exec tsx degov-client.ts brief ens
-pnpm exec tsx degov-client.ts item proposal <id>
-pnpm exec tsx degov-client.ts freshness
-pnpm exec tsx degov-client.ts health
+pnpm --dir scripts exec tsx degov-client.ts daos
+pnpm --dir scripts exec tsx degov-client.ts budget --usd 1
+pnpm --dir scripts exec tsx degov-client.ts wallet init
+pnpm --dir scripts exec tsx degov-client.ts wallet address
+pnpm --dir scripts exec tsx degov-client.ts wallet balance
+pnpm --dir scripts exec tsx degov-client.ts transfer <to-address> <amount-usdc>
+pnpm --dir scripts exec tsx degov-client.ts activity --hours 24 --limit 10
+pnpm --dir scripts exec tsx degov-client.ts governance-events --hours 24 --limit 200
+pnpm --dir scripts exec tsx degov-client.ts brief ens
+pnpm --dir scripts exec tsx degov-client.ts item proposal <id>
+pnpm --dir scripts exec tsx degov-client.ts freshness
+pnpm --dir scripts exec tsx degov-client.ts health
 ```

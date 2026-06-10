@@ -5,7 +5,9 @@ This script intentionally uses only the Python standard library so it can run in
 CI and local smoke tests without installing extra packages. It validates the
 same properties that matter for a Hermes skill load at a repository level:
 frontmatter shape, non-empty body, required final-output sections, and example
-outputs that exercise both benign and high-risk proposal analysis paths.
+outputs that exercise both benign and high-risk proposal analysis paths. It
+also checks that required output markers render as Markdown instead of being
+accidentally indented into code blocks.
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 SKILL_PATH = ROOT / 'skills' / 'dao-governance-security' / 'SKILL.md'
@@ -57,7 +60,7 @@ EXAMPLE_EXPECTATIONS = {
 }
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise AssertionError(message)
 
 
@@ -89,6 +92,35 @@ def assert_contains_all(text: str, markers: list[str], label: str) -> None:
         fail(f'{label}: missing required markers: {missing}')
 
 
+def assert_markers_start_lines(text: str, markers: list[str], label: str) -> None:
+    """Ensure required Markdown markers are not hidden inside code blocks.
+
+    Four leading spaces turn headings, fields, lists, and tables into literal
+    code blocks in Markdown. A plain substring check can pass even though the
+    rendered analysis is unreadable and fails the skill's final-output contract.
+    """
+
+    missing_at_column_zero = []
+    for marker in markers:
+        if not re.search(rf'^{re.escape(marker)}', text, flags=re.MULTILINE):
+            missing_at_column_zero.append(marker)
+    if missing_at_column_zero:
+        fail(f'{label}: required Markdown markers must start at column 0: {missing_at_column_zero}')
+
+
+def assert_no_indented_markdown_blocks(text: str, label: str) -> None:
+    bad_lines = []
+    markdown_start = re.compile(
+        r' {4}(?:#{1,6} |[-*] |\| |Overall risk:|Confidence:|Recommendation:)'
+    )
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if markdown_start.match(line):
+            bad_lines.append(f'{line_number}: {line[:80]}')
+    if bad_lines:
+        preview = '; '.join(bad_lines[:5])
+        fail(f'{label}: Markdown appears indented as a code block: {preview}')
+
+
 def validate_skill() -> None:
     fields, body = parse_frontmatter(SKILL_PATH)
     if fields.get('name') != 'dao-governance-security':
@@ -99,6 +131,13 @@ def validate_skill() -> None:
     if len(description) > 1024:
         fail(f'{SKILL_PATH}: description exceeds 1024 characters')
     assert_contains_all(body, REQUIRED_OUTPUT_MARKERS, str(SKILL_PATH))
+    template_match = re.search(r'```markdown\n(?P<template>.*?)\n```', body, flags=re.DOTALL)
+    if not template_match:
+        fail(f'{SKILL_PATH}: final-output Markdown template fence is missing')
+    template = template_match.group('template')
+    assert_contains_all(template, REQUIRED_OUTPUT_MARKERS, f'{SKILL_PATH} final-output template')
+    assert_markers_start_lines(template, REQUIRED_OUTPUT_MARKERS, f'{SKILL_PATH} final-output template')
+    assert_no_indented_markdown_blocks(template, f'{SKILL_PATH} final-output template')
 
     if 'Required sections are:' not in body:
         fail(f'{SKILL_PATH}: required-section contract intro is missing')
@@ -128,6 +167,8 @@ def validate_examples() -> None:
             fail(f'{path}: expected example file is missing')
         text = path.read_text(encoding='utf-8')
         assert_contains_all(text, REQUIRED_OUTPUT_MARKERS, str(path))
+        assert_markers_start_lines(text, REQUIRED_OUTPUT_MARKERS, str(path))
+        assert_no_indented_markdown_blocks(text, str(path))
         expected_risk = expectation['risk']
         if f'Overall risk: {expected_risk}' not in text:
             fail(f'{path}: expected Overall risk: {expected_risk}')
@@ -151,6 +192,7 @@ def main() -> int:
     print(f'- skill loadable: {SKILL_PATH}')
     print(f'- examples checked: {len(EXAMPLE_EXPECTATIONS)}')
     print('- structured output markers present in skill template and examples')
+    print('- Markdown markers render at column 0, not as indented code blocks')
     print('- risky example covers malicious/contradictory action, incorrect amount, suspicious recipient/proposer, and dangerous permission')
     return 0
 

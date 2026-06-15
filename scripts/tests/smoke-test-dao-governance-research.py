@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""File overview: run deterministic and optional live smoke tests for dao-governance.
+"""File overview: run deterministic and optional live smoke tests for dao-governance-research.
 
 This script intentionally uses only the Python standard library so it can run in
 CI and local environments before the TypeScript helper dependencies are known to
@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-USAGE = """Usage: python3 scripts/tests/smoke-test-dao-governance.py [--offline] [--free-api] [--wallet] [--paid]
+USAGE = """Usage: python3 scripts/tests/smoke-test-dao-governance-research.py [--offline] [--free-api] [--wallet] [--paid]
 
 Default/--offline:
   Run deterministic local checks only: security skill validation, pnpm install,
@@ -34,7 +34,8 @@ Default/--offline:
 """
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "skills" / "dao-governance" / "scripts"
+RESEARCH_SKILL_PATH = ROOT / "skills" / "dao-governance-research" / "SKILL.md"
+SCRIPTS_DIR = ROOT / "skills" / "dao-governance-research" / "scripts"
 OUTPUT_DIR = Path(os.environ.get("TMPDIR", "/tmp")) / "degov-agent-skills-smoke"
 
 
@@ -100,12 +101,37 @@ def ensure_non_empty(path: Path) -> None:
         raise AssertionError(f"Expected non-empty file: {path}")
 
 
+def validate_research_skill() -> None:
+    content = RESEARCH_SKILL_PATH.read_text(encoding="utf-8")
+    if not content.startswith("---\n"):
+        raise AssertionError(f"{RESEARCH_SKILL_PATH}: missing frontmatter start")
+    try:
+        _, frontmatter, body = content.split("---\n", 2)
+    except ValueError as exc:
+        raise AssertionError(f"{RESEARCH_SKILL_PATH}: malformed frontmatter") from exc
+    fields = {}
+    for line in frontmatter.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        fields[key.strip()] = value.strip()
+    if fields.get("name") != "dao-governance-research":
+        raise AssertionError(
+            f"{RESEARCH_SKILL_PATH}: expected name dao-governance-research, found {fields.get('name')!r}"
+        )
+    if not fields.get("description"):
+        raise AssertionError(f"{RESEARCH_SKILL_PATH}: missing description")
+    if not body.strip():
+        raise AssertionError(f"{RESEARCH_SKILL_PATH}: missing body")
+
+
 def run_local_checks() -> None:
     print("== Local checks ==", flush=True)
+    validate_research_skill()
     run(["python3", "scripts/tests/validate-dao-governance-security.py"], cwd=ROOT)
-    run(["pnpm", "--dir", "skills/dao-governance/scripts", "install", "--frozen-lockfile"], cwd=ROOT)
+    run(["pnpm", "--dir", "skills/dao-governance-research/scripts", "install", "--frozen-lockfile"], cwd=ROOT)
     run(["pnpm", "run", "format:check"], cwd=ROOT)
-    run(["pnpm", "--dir", "skills/dao-governance/scripts", "run", "check"], cwd=ROOT)
+    run(["pnpm", "--dir", "skills/dao-governance-research/scripts", "run", "check"], cwd=ROOT)
 
     help_output = OUTPUT_DIR / "help.txt"
     run_to_file(["pnpm", "exec", "tsx", "degov-client.ts", "help"], help_output)

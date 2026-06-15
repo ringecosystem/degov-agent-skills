@@ -8,7 +8,7 @@ import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 import { base } from 'viem/chains';
 
 const WALLET_FILE_MODE = 0o600;
-const DEFAULT_STATE_DIR = path.join(os.homedir(), '.agents', 'state', 'dao-governance');
+const DEFAULT_STATE_DIR = path.join(os.homedir(), '.agents', 'state', 'dao-governance-research');
 export const DEFAULT_WALLET_PATH = path.join(DEFAULT_STATE_DIR, 'wallet.json');
 export const DEFAULT_PASSPHRASE_PATH = path.join(DEFAULT_STATE_DIR, 'wallet-passphrase');
 

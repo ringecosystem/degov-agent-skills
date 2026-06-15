@@ -6,14 +6,14 @@ This repository packages DAO governance skills so agents can answer governance q
 
 ## What is included
 
-- `skills/dao-governance/SKILL.md`: the agent-facing governance research guide.
+- `skills/dao-governance-research/SKILL.md`: the agent-facing governance research guide.
 - `skills/dao-governance-security/SKILL.md`: the proposal security-analysis rubric for evaluating executable actions, funds flow, permissions, proposer/process anomalies, uncertainty, and recommended user actions.
-- `skills/dao-governance/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
+- `skills/dao-governance-research/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
 - `scripts/tests/`: repository-owned validation and smoke-test entry points used by CI and local checks.
 
 ## What the skills do
 
-The `dao-governance` skill helps agents:
+The `dao-governance-research` skill helps agents:
 
 - discover covered DAOs through free public endpoints
 - use Degov Agent API as the primary evidence source when recent governance data matters
@@ -42,10 +42,10 @@ Run the deterministic validator from the repository root:
 pnpm run validate:dao-governance-security
 ```
 
-The validator checks that `skills/dao-governance-security/SKILL.md` is loadable as a skill, that its required final-analysis sections are present, and that both examples follow the structured output contract. The same check is included in the offline smoke test:
+The validator checks that `skills/dao-governance-security/SKILL.md` is loadable as a skill, that its required final-analysis sections are present, and that both examples follow the structured output contract. The offline smoke test also validates the `dao-governance-research` skill frontmatter:
 
 ```bash
-pnpm run smoke:dao-governance
+pnpm run smoke:dao-governance-research
 ```
 
 The default API endpoint is:
@@ -77,7 +77,7 @@ The helper CLI creates a dedicated local wallet for small API payments. It does 
 Default local wallet state is stored outside the repository:
 
 ```text
-~/.agents/state/dao-governance/wallet.json
+~/.agents/state/dao-governance-research/wallet.json
 ```
 
 Keep wallet files, passphrases, `.env` files, logs, generated state, and other secrets out of version control.
@@ -90,13 +90,13 @@ Repository-wide checks are exposed from the repository root. The root formatter 
 pnpm run format
 pnpm run format:check
 pnpm run validate:dao-governance-security
-pnpm run smoke:dao-governance
+pnpm run smoke:dao-governance-research
 ```
 
-The dao-governance helper package keeps local checks scoped to the governance skill. Run these from the skill directory; the package itself lives in `scripts/`:
+The dao-governance-research helper package keeps local checks scoped to the governance skill. Run these from the skill directory; the package itself lives in `scripts/`:
 
 ```bash
-cd skills/dao-governance
+cd skills/dao-governance-research
 pnpm --dir scripts run format
 pnpm --dir scripts run format:check
 pnpm --dir scripts run check
@@ -107,7 +107,7 @@ pnpm --dir scripts run check
 From the skill directory:
 
 ```bash
-cd skills/dao-governance
+cd skills/dao-governance-research
 pnpm --dir scripts install
 pnpm --dir scripts exec tsx degov-client.ts help
 ```

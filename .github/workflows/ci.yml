@@ -24,10 +24,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: skills/dao-governance/scripts/pnpm-lock.yaml
+          cache-dependency-path: skills/dao-governance-research/scripts/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm --dir skills/dao-governance/scripts install --frozen-lockfile
+        run: pnpm --dir skills/dao-governance-research/scripts install --frozen-lockfile
 
       - name: Check formatting
         run: pnpm run format:check
@@ -38,7 +38,7 @@ jobs:
           pnpm run validate:dao-governance-security
 
       - name: Check TypeScript compilation, tests, and CLI startup
-        run: pnpm --dir skills/dao-governance/scripts run check
+        run: pnpm --dir skills/dao-governance-research/scripts run check
 
-      - name: Run dao-governance smoke test
-        run: pnpm run smoke:dao-governance
+      - name: Run dao-governance-research smoke test
+        run: pnpm run smoke:dao-governance-research

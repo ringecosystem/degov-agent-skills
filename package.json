@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "pnpm --dir skills/dao-governance/scripts run prettier --write ../../..",
-    "format:check": "pnpm --dir skills/dao-governance/scripts run prettier --check ../../..",
+    "format": "pnpm --dir skills/dao-governance-research/scripts run prettier --write ../../..",
+    "format:check": "pnpm --dir skills/dao-governance-research/scripts run prettier --check ../../..",
     "validate:dao-governance-security": "python3 scripts/tests/validate-dao-governance-security.py",
-    "smoke:dao-governance": "python3 scripts/tests/smoke-test-dao-governance.py --offline",
-    "smoke:dao-governance:free": "python3 scripts/tests/smoke-test-dao-governance.py --free-api",
-    "smoke:dao-governance:wallet": "python3 scripts/tests/smoke-test-dao-governance.py --free-api --wallet"
+    "smoke:dao-governance-research": "python3 scripts/tests/smoke-test-dao-governance-research.py --offline",
+    "smoke:dao-governance-research:free": "python3 scripts/tests/smoke-test-dao-governance-research.py --free-api",
+    "smoke:dao-governance-research:wallet": "python3 scripts/tests/smoke-test-dao-governance-research.py --free-api --wallet"
   }
 }

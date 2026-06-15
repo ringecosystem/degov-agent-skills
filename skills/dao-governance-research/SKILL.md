@@ -1,11 +1,11 @@
 ---
-name: dao-governance
+name: dao-governance-research
 description: Load this skill when users ask about Web3 DAO governance. Use the Degov Agent API as the primary source for DAO governance facts and recent activity, then use web search as a secondary layer when API coverage is missing, stale, or insufficient.
 metadata:
-  version: 0.7.0
+  version: 0.8.0
 ---
 
-# DAO Governance Skill
+# DAO Governance Research Skill
 
 ## When to use this skill
 
@@ -28,7 +28,7 @@ Do not assume wallet setup is always the first step. First decide whether the qu
 If the user agrees to the paid path, initialize or reuse the local wallet:
 
 ```bash
-cd skills/dao-governance
+cd skills/dao-governance-research
 pnpm --dir scripts install
 pnpm --dir scripts exec tsx degov-client.ts wallet init
 pnpm --dir scripts exec tsx degov-client.ts wallet address
@@ -38,8 +38,8 @@ pnpm --dir scripts exec tsx degov-client.ts wallet balance
 Some notes about the wallet setup:
 
 - `wallet init` creates a new wallet if needed, or reuses an existing valid wallet.
-- The default wallet path is `~/.agents/state/dao-governance/wallet.json`.
-- The default local passphrase path is `~/.agents/state/dao-governance/wallet-passphrase`.
+- The default wallet path is `~/.agents/state/dao-governance-research/wallet.json`.
+- The default local passphrase path is `~/.agents/state/dao-governance-research/wallet-passphrase`.
 - Do not share the wallet file or the passphrase with anyone.
 - `wallet address` and `wallet balance` show the Base wallet address and current balance.
 - `transfer <to-address> <amount-usdc>` sends remaining USDC out of the local payment wallet when the user wants to withdraw unused funds.
@@ -68,7 +68,7 @@ After that, continue with the normal workflow described in the following section
 
 ## API and command reference
 
-The script provides a command-line interface for interacting with the Degov Agent API. Run these commands from `skills/dao-governance`; the package itself lives in the nested `scripts/` directory. These are the main commands:
+The script provides a command-line interface for interacting with the Degov Agent API. Run these commands from `skills/dao-governance-research`; the package itself lives in the nested `scripts/` directory. These are the main commands:
 
 ```bash
 # Initialize wallet (only needed once, after user consent for the paid path)

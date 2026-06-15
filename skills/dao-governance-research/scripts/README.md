@@ -1,4 +1,4 @@
-# dao-governance scripts
+# dao-governance-research scripts
 
 TypeScript CLI helpers for querying `degov-agent-api` with automatic x402 payments.
 
@@ -12,7 +12,7 @@ If the user agrees, complete the wallet setup below. If the user declines, use w
 ## Quick start
 
 ```bash
-cd skills/dao-governance
+cd skills/dao-governance-research
 pnpm --dir scripts install
 pnpm --dir scripts exec tsx degov-client.ts wallet init
 pnpm --dir scripts exec tsx degov-client.ts wallet address
@@ -34,10 +34,10 @@ Set `DEGOV_AGENT_API_BASE_URL` only when you want to use a local or alternate AP
 
 ## Local package checks
 
-Run helper-package checks from the governance skill directory so they stay scoped to `skills/dao-governance`:
+Run helper-package checks from the governance skill directory so they stay scoped to `skills/dao-governance-research`:
 
 ```bash
-cd skills/dao-governance
+cd skills/dao-governance-research
 pnpm --dir scripts run format:check
 pnpm --dir scripts run check
 ```
@@ -64,7 +64,7 @@ Paid:
 
 The generated wallet is stored outside git:
 
-- default: `~/.agents/state/dao-governance/wallet.json`
+- default: `~/.agents/state/dao-governance-research/wallet.json`
 - override with `DEGOV_AGENT_WALLET_PATH`
 
 New wallets are encrypted at rest. For non-interactive use, set:
@@ -73,7 +73,7 @@ New wallets are encrypted at rest. For non-interactive use, set:
 
 If that variable is not set, the CLI creates and reuses a local passphrase file automatically:
 
-- default: `~/.agents/state/dao-governance/wallet-passphrase`
+- default: `~/.agents/state/dao-governance-research/wallet-passphrase`
 - override with `DEGOV_AGENT_WALLET_PASSPHRASE_PATH`
 
 To return unused USDC from the local payment wallet, enter the destination address and amount on the command line:

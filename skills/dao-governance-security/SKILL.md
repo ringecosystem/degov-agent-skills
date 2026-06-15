@@ -54,7 +54,7 @@ Evidence sources to prefer:
 - Block explorers with verified contract source, ABI, token transfer views, and transaction simulation traces.
 - DAO treasury dashboards and official multisig/governor addresses.
 - Prior proposals by the same proposer or affecting the same contracts.
-- Degov Agent API via the `dao-governance` skill when recent proposal discovery or context is needed.
+- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context is needed.
 
 Never ask the user to paste private keys, seed phrases, admin credentials, or non-public secrets.
 

@@ -324,7 +324,7 @@ Use the synthetic examples in [examples/](examples/) to understand the expected 
 Run the deterministic local validator after editing this skill or its examples:
 
 ```bash
-pnpm run validate:dao-governance-security
+python3 .github/scripts/validate-dao-governance-security.py
 ```
 
 The validator checks that this file is loadable as a skill, the required final output sections are still present, and both examples follow the structured analysis format.

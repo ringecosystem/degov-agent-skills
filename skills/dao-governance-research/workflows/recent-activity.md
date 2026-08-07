@@ -1,6 +1,6 @@
 # Workflow: recent governance activity
 
-Goal: answer "what has <DAO> been doing lately?" or "what happened in governance this week?" Paid (standard tier) — apply the paid-call consent flow in SKILL.md first.
+Goal: answer "what has <DAO> been doing lately?" or "what happened in governance this week?" Paid (standard tier) — apply the paid-call consent flow in [SKILL.md](../SKILL.md) first.
 
 ## Steps
 

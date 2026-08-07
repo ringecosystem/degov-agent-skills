@@ -14,17 +14,3 @@ Reusable agent skills for DAO governance research and proposal security analysis
 ```bash
 npx skills add ringecosystem/degov-agent-skills
 ```
-
-## Development
-
-```bash
-pnpm install
-pnpm run format:check
-pnpm run validate:dao-governance-security
-pnpm run test:x402-compat
-pnpm run smoke:dao-governance-research        # offline checks
-pnpm run smoke:dao-governance-research:free   # live free endpoints
-pnpm run smoke:dao-governance-research:paid   # live paid-offer check (zero cost)
-```
-
-Set `DEGOV_AGENT_API_BASE_URL` to point live checks at a staging instance (e.g. `http://127.0.0.1:8310`).

@@ -14,30 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies (prettier only)
-        run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: pnpm run format:check
+        run: npx --yes prettier@3.6.2 --ignore-unknown --ignore-path .prettierignore --ignore-path .gitignore --check .
 
       - name: Check Python validation scripts
         run: |
           python3 -m py_compile .github/scripts/*.py
-          pnpm run validate:dao-governance-security
+          python3 .github/scripts/validate-dao-governance-security.py
 
       - name: Check x402 offer compatibility fixture
-        run: pnpm run test:x402-compat
+        run: python3 .github/scripts/test_x402_compat.py
 
       - name: Run dao-governance-research smoke test
-        run: pnpm run smoke:dao-governance-research
+        run: python3 .github/scripts/smoke-test-dao-governance-research.py --offline

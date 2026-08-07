@@ -24,7 +24,7 @@ Never type passwords or mnemonics into chat or inline flags; use the `MM_PASSWOR
 - The API settles in USDC on **Base** (chain id `8453`). Fund the mm wallet's Base address with USDC.
 - Balance: `mm wallet balance --chain-ids 8453`
 - Add funds: `mm wallet add-fund` (shows a QR code and the address).
-- Withdraw unused USDC: `mm transfer <to-address> <amount> --chain-ids 8453` — confirm recipient and amount with the user first.
+- Withdraw unused USDC: `mm transfer <to-address> <amount> --chain-id 8453` — confirm recipient and amount with the user first.
 
 ## Spending policy and automation
 

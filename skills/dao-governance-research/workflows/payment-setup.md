@@ -5,7 +5,7 @@ Goal: get a new environment ready for paid Degov API calls (one-time). The user 
 ## Prerequisites check
 
 ```bash
-mm --version                      # @metamask/agent-wallet/<version>; compare to SKILL.md mmCliVersion
+mm --version                      # @metamask/agent-wallet/<version>; compare to SKILL.md mmCliVersion ([SKILL.md](../SKILL.md) frontmatter)
 mm doctor                         # authenticated: true, initialized: true
 mm chains list --json             # chain id 8453 (Base) present
 ```
@@ -37,7 +37,7 @@ mm wallet balance --chain-ids 8453
 curl -s https://agent-api.degov.ai/v2/meta/pricing      # confirm live prices
 ```
 
-5. **First paid call** (agent): follow the payment ceremony in SKILL.md — `x402_pay.py inspect` → show the user asset/amount/network/payTo → confirm → `pay`. Verify the settlement transaction hash and that the resource body came back.
+5. **First paid call** (agent): follow the payment ceremony in [SKILL.md](../SKILL.md) — `x402_pay.py inspect` → show the user asset/amount/network/payTo → confirm → `pay`. Verify the settlement transaction hash and that the resource body came back.
 
 ## Notes
 

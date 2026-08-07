@@ -24,7 +24,7 @@ import urllib.request
 from pathlib import Path
 from typing import NoReturn
 
-USAGE = """Usage: python3 scripts/tests/smoke-test-dao-governance-research.py [--offline] [--free-api] [--paid]
+USAGE = """Usage: python3 .github/scripts/smoke-test-dao-governance-research.py [--offline] [--free-api] [--paid]
 
 Default/--offline:
   Run deterministic local checks only: skill frontmatter, references/workflows
@@ -43,7 +43,7 @@ Default/--offline:
 """
 
 ROOT = Path(__file__).resolve().parents[2]
-TESTS_DIR = ROOT / "scripts" / "tests"
+TESTS_DIR = ROOT / ".github" / "scripts"
 RESEARCH_SKILL_PATH = ROOT / "skills" / "dao-governance-research" / "SKILL.md"
 REFERENCES_DIR = ROOT / "skills" / "dao-governance-research" / "references"
 WORKFLOWS_DIR = ROOT / "skills" / "dao-governance-research" / "workflows"
@@ -136,7 +136,7 @@ def run_local_checks() -> None:
     print("== Local checks ==", flush=True)
     validate_research_skill()
     run(["python3", str(TESTS_DIR / "validate-dao-governance-security.py")], cwd=ROOT)
-    run(["python3", "-m", "unittest", str(TESTS_DIR / "test_x402_compat.py")], cwd=ROOT)
+    run(["python3", str(TESTS_DIR / "test_x402_compat.py")], cwd=ROOT)
     for path in sorted(TESTS_DIR.glob("*.py")):
         run(["python3", "-m", "py_compile", str(path)], cwd=ROOT)
 
@@ -214,6 +214,24 @@ def run_paid_offer_checks() -> None:
     offer = parse_payment_required(raw)
     assert_offer_compatible(offer)
     print("live 402 offer is payable by the MetaMask x402_pay.py requirements (zero cost)", flush=True)
+
+    # Key-param routes must reach the payment gate (402), not 414. v2 proposalKey
+    # values are ~190 chars; an old deployment with the default Fastify
+    # maxParamLength (100) rejects them with 414 before payment is even offered.
+    # A fake ~190-char key is enough to exercise the route: unpaid it must 402
+    # (route matched, payment gate reached) and never settle anything.
+    fake_key = "v2:test-dao:snapshot:" + "a" * 170
+    url = f"{API_BASE_URL}/v2/proposals/{fake_key}"
+    status, payload, headers = http_get_json(url)
+    if status == 414:
+        fail(
+            f"key-param route still 414 (maxParamLength fix missing): {url}\n"
+            "degov-agent-api raised maxParamLength so ~190-char v2 keys stay routable; "
+            "deploy that fix (PR #292) before running this check."
+        )
+    if status != 402:
+        fail(f"expected 402 for unpaid key-param route, got status={status} payload={payload}")
+    print("key-param route accepts ~190-char keys and reaches the payment gate (414 fix verified, zero cost)", flush=True)
 
 
 def parse_args(argv: list[str]) -> tuple[bool, bool]:

@@ -33,7 +33,7 @@ jobs:
 
       - name: Check Python validation scripts
         run: |
-          python3 -m py_compile scripts/tests/*.py
+          python3 -m py_compile .github/scripts/*.py
           pnpm run validate:dao-governance-security
 
       - name: Check x402 offer compatibility fixture

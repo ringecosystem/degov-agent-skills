@@ -24,10 +24,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: skills/dao-governance-research/scripts/pnpm-lock.yaml
 
-      - name: Install dependencies
-        run: pnpm --dir skills/dao-governance-research/scripts install --frozen-lockfile
+      - name: Install dependencies (prettier only)
+        run: pnpm install --frozen-lockfile
 
       - name: Check formatting
         run: pnpm run format:check
@@ -37,8 +36,8 @@ jobs:
           python3 -m py_compile scripts/tests/*.py
           pnpm run validate:dao-governance-security
 
-      - name: Check TypeScript compilation, tests, and CLI startup
-        run: pnpm --dir skills/dao-governance-research/scripts run check
+      - name: Check x402 offer compatibility fixture
+        run: pnpm run test:x402-compat
 
       - name: Run dao-governance-research smoke test
         run: pnpm run smoke:dao-governance-research

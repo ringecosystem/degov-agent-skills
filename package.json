@@ -3,11 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "pnpm --dir skills/dao-governance-research/scripts run prettier --write ../../..",
-    "format:check": "pnpm --dir skills/dao-governance-research/scripts run prettier --check ../../..",
+    "format": "prettier --ignore-unknown --ignore-path .prettierignore --ignore-path .gitignore --write .",
+    "format:check": "prettier --ignore-unknown --ignore-path .prettierignore --ignore-path .gitignore --check .",
     "validate:dao-governance-security": "python3 scripts/tests/validate-dao-governance-security.py",
+    "test:x402-compat": "python3 -m unittest scripts/tests/test_x402_compat.py",
     "smoke:dao-governance-research": "python3 scripts/tests/smoke-test-dao-governance-research.py --offline",
     "smoke:dao-governance-research:free": "python3 scripts/tests/smoke-test-dao-governance-research.py --free-api",
-    "smoke:dao-governance-research:wallet": "python3 scripts/tests/smoke-test-dao-governance-research.py --free-api --wallet"
+    "smoke:dao-governance-research:paid": "python3 scripts/tests/smoke-test-dao-governance-research.py --free-api --paid"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
   }
 }

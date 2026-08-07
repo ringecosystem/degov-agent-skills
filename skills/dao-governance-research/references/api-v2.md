@@ -4,7 +4,9 @@ The v2 API is the only supported surface. Base URL (production): `https://agent-
 
 ```json
 {
-  "data": { "...": "..." },
+  "data": {
+    "...": "..."
+  },
   "meta": {
     "requestId": "req-xxx",
     "generatedAt": "2026-08-07T07:58:10.529Z",
@@ -18,8 +20,8 @@ The v2 API is the only supported surface. Base URL (production): `https://agent-
 - `data` is the payload; `meta.generatedAt` is when the response was built; `meta.dataAsOf` is how fresh the underlying data is.
 - `meta.readiness.status` ∈ `ready | backfilling | stale | unavailable`. Readiness is publication state — separate from domain coverage. Treat `backfilling`/`stale` as "data may lag", not "not found".
 - `meta.page` appears on list endpoints: `limit`, `hasMore`, `nextCursor` (opaque, revision-bound). Pass `nextCursor` back as `cursor` to continue; never reuse a cursor with different filters (409 `CURSOR_STALE`) and never construct one.
-- Errors: `{ "error": { "code", "message", "details?" }, "meta": { "requestId" } }` — see `errors.md`.
-- Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see `x402.md` and the payment ceremony in SKILL.md.
+- Errors: see [errors.md](errors.md).
+- Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see [x402.md](x402.md) and the payment ceremony in [SKILL.md](../SKILL.md).
 
 Limits: `limit` max 100 (events max 200, votes max 500); event window max 90 days; proposal window max 365 days; timeline max 240 months.
 
@@ -39,7 +41,28 @@ Live pricing route table. No payment, no pagination.
 
 Params: none.
 
-Response `data`: `{ token: "USDC", network: "eip155:8453", routes: [{ routeId, method, path, tier, paid, price }] }` — `tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. See `pricing.md`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "token": "USDC",
+    "network": "eip155:8453",
+    "routes": [
+      {
+        "routeId": "v2.proposals.list",
+        "method": "GET",
+        "path": "/v2/proposals",
+        "tier": "standard",
+        "paid": true,
+        "price": "0.005"
+      }
+    ]
+  }
+}
+```
+
+`tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. See [pricing.md](pricing.md).
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/meta/pricing
@@ -55,7 +78,21 @@ Params:
 | ------- | ------ | -------------------------------------- |
 | `daoId` | string | optional; scopes the report to one DAO |
 
-Global `data`: `{ scope: "global", counts: { daos, proposals, voteProposals }, coverageStatus, dataAsOf, projections: { pending, running, dead } }`. Per-DAO `data`: `{ scope: "dao", daoId, daoName, coverageStatus, voteCoverageStatus, latestSuccessfulSync, dataAsOf }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "scope": "global",
+    "counts": { "daos": 42, "proposals": 1234, "voteProposals": 800 },
+    "coverageStatus": "ready",
+    "dataAsOf": "2026-08-07T07:57:55.672Z",
+    "projections": { "pending": 3, "running": 1, "dead": 0 }
+  }
+}
+```
+
+Per-DAO `data`: `{ scope: "dao", daoId, daoName, coverageStatus, voteCoverageStatus, latestSuccessfulSync, dataAsOf }`.
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/meta/data-status
@@ -76,7 +113,27 @@ Params:
 | `limit`          | int, 1–100, default 50 |                                                |
 | `cursor`         | string                 | opaque page cursor from `meta.page.nextCursor` |
 
-Item shape: `{ daoId, name, hasVoteData, hasForumData, coverageStatus, voteCoverageStatus, proposalCounts: { total, active }, participation: { uniqueVoters, totalVotes, totalVotingPower }, latestActivity: { proposalAt, voteAt, forumAt } }`. Numeric strings are decimal strings.
+Example item shape:
+
+```json
+{
+  "daoId": "ens-dao",
+  "name": "ENS",
+  "hasVoteData": true,
+  "hasForumData": true,
+  "coverageStatus": "ready",
+  "voteCoverageStatus": "ready",
+  "proposalCounts": { "total": 74, "active": 1 },
+  "participation": { "uniqueVoters": "12345", "totalVotes": "234567", "totalVotingPower": "4567890123" },
+  "latestActivity": {
+    "proposalAt": "2026-08-01T12:00:00Z",
+    "voteAt": "2026-08-02T08:00:00Z",
+    "forumAt": "2026-08-03T10:00:00Z"
+  }
+}
+```
+
+Numeric strings are decimal strings.
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/daos?hasVoteData=true&limit=50"
@@ -88,7 +145,27 @@ DAO summary. No payment.
 
 Params: none (path: `daoId`).
 
-`data`: `{ daoId, name, coverageStatus, voteCoverageStatus, proposalCounts: { total, active, pending, closed }, outcomes: { passed, failed, executed, canceled, unknown }, participation: { uniqueVoters, totalVotes, totalVotingPower }, sourceTypes: string[], latestActivity: { proposalAt, voteAt, forumAt } }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "daoId": "ens-dao",
+    "name": "ENS",
+    "coverageStatus": "ready",
+    "voteCoverageStatus": "ready",
+    "proposalCounts": { "total": 74, "active": 1, "pending": 2, "closed": 71 },
+    "outcomes": { "passed": 40, "failed": 20, "executed": 10, "canceled": 3, "unknown": 1 },
+    "participation": { "uniqueVoters": "12345", "totalVotes": "234567", "totalVotingPower": "4567890123" },
+    "sourceTypes": ["snapshot", "degov-square"],
+    "latestActivity": {
+      "proposalAt": "2026-08-01T12:00:00Z",
+      "voteAt": "2026-08-02T08:00:00Z",
+      "forumAt": "2026-08-03T10:00:00Z"
+    }
+  }
+}
+```
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/daos/ens-dao
@@ -115,7 +192,20 @@ Params:
 | `limit`           | int, 1–100, default 25 |                                                                    |
 | `cursor`          | string                 | page cursor                                                        |
 
-Item shape: `{ proposalKey, identity: { daoId, provider, externalId }, title, sourceUrl, lifecycleStatus, outcome, endAt, coverageStatus }`.
+Example item shape:
+
+```json
+{
+  "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+  "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
+  "title": "Fund the governance working group",
+  "sourceUrl": "https://snapshot.org/proposal/0xabc...",
+  "lifecycleStatus": "active",
+  "outcome": null,
+  "endAt": "2026-08-14T18:00:00Z",
+  "coverageStatus": "ready"
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals?daoId=ens-dao&lifecycleStatus=active&sort=endingSoon&limit=25"
@@ -127,7 +217,24 @@ External reference → canonical `proposalKey`. Paid (standard). Use only when y
 
 Params: exactly one of `url`, `title`, or `externalId` (required), plus optional `daoId`, `provider`, and `limit` (1–20, default 5).
 
-`data`: `{ candidates: [{ proposalKey, identity: { daoId, provider, externalId }, title, match: { type, matchedFields } }] }`. `match.type` is deterministic (`exact`/`url`/`title`/`external_id`-style), not a probability.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "candidates": [
+      {
+        "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+        "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
+        "title": "Fund the governance working group",
+        "match": { "type": "url", "matchedFields": ["sourceUrl"] }
+      }
+    ]
+  }
+}
+```
+
+`match.type` is deterministic (`exact`/`url`/`title`/`external_id`-style), not a probability.
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/resolve?url=https://snapshot.org/proposal/0x123...&daoId=ens-dao"
@@ -149,7 +256,21 @@ Params:
 | `limit`         | int, 1–200, default 100 |                                                                                                                                                                           |
 | `cursor`        | string                  |                                                                                                                                                                           |
 
-Item shape: `{ eventId, eventType, eventTimeMs, daoId, itemType, title, url, importanceScore, proposalKey? | topicKey? }`.
+Example item shape:
+
+```json
+{
+  "eventId": "evt-123",
+  "eventType": "proposal_voting_ended",
+  "eventTimeMs": 1723046400000,
+  "daoId": "ens-dao",
+  "itemType": "proposal",
+  "title": "Fund the governance working group",
+  "url": "https://snapshot.org/proposal/0xabc...",
+  "importanceScore": 80,
+  "proposalKey": "v2:ens-dao:snapshot:0xabc..."
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/events?from=2026-08-01T00:00:00Z&to=2026-08-07T00:00:00Z&eventTypes=proposal_created,proposal_voting_ended&limit=200"
@@ -172,7 +293,22 @@ Params:
 | `limit`       | int, 1–100, default 50 |                                                                                                                                           |
 | `cursor`      | string                 |                                                                                                                                           |
 
-Item shape: `{ signalId, signalType, priority: { score, band }, actionability, daoId, title, summary, sourceUrl, severity, proposalKey? | topicKey? }`.
+Example item shape:
+
+```json
+{
+  "signalId": "sig-456",
+  "signalType": "proposal_result",
+  "priority": { "score": 90, "band": "high" },
+  "actionability": "act",
+  "daoId": "ens-dao",
+  "title": "Fund the governance working group",
+  "summary": "Proposal passed with 78% support",
+  "sourceUrl": "https://snapshot.org/proposal/0xabc...",
+  "severity": "info",
+  "proposalKey": "v2:ens-dao:snapshot:0xabc..."
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/signals?from=2026-08-01T00:00:00Z&to=2026-08-07T00:00:00Z&signalTypes=proposal_result,governance_radar&surface=agent"
@@ -195,7 +331,29 @@ Params:
 | `limit`                     | int, 1–100, default 25 |                                                       |
 | `cursor`                    | string                 |                                                       |
 
-Item shape: `{ topicKey, identity, title, summary, url, author, category, tags, relevanceScore, replies, posts, likes, views, createdAt, updatedAt }` (counts as decimal strings).
+Example item shape:
+
+```json
+{
+  "topicKey": "v2:uniswap:forum:topic-789",
+  "identity": { "daoId": "uniswap", "provider": "forum", "externalId": "topic-789" },
+  "title": "Should we adjust the UNI staking rewards?",
+  "summary": "Community discussion on reward parameters",
+  "url": "https://gov.uniswap.org/t/789",
+  "author": "0xabc...",
+  "category": "governance",
+  "tags": ["rewards"],
+  "relevanceScore": 75,
+  "replies": "12",
+  "posts": "18",
+  "likes": "34",
+  "views": "1200",
+  "createdAt": "2026-07-20T10:00:00Z",
+  "updatedAt": "2026-08-05T14:00:00Z"
+}
+```
+
+Counts are decimal strings.
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/forum-topics?daoId=uniswap&governanceRelated=true&sort=repliesDesc&limit=25"
@@ -207,7 +365,28 @@ curl -s "https://agent-api.degov.ai/v2/forum-topics?daoId=uniswap&governanceRela
 
 Proposal detail (body text, proposer, choices, quorum, lifecycle). Paid (plus). `proposalKey` must come from a list/resolve/event/signal result.
 
-`data`: `{ proposalKey, identity, title, bodyText, proposerId, sourceUrl, discussionUrl, lifecycleStatus, outcome, choices, quorumRaw, startAt, endAt, related: { voteSummary, votes, evidence } }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+    "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
+    "title": "Fund the governance working group",
+    "bodyText": "This proposal funds the working group...",
+    "proposerId": "0xdef...",
+    "sourceUrl": "https://snapshot.org/proposal/0xabc...",
+    "discussionUrl": "https://forum.ens.domains/t/123",
+    "lifecycleStatus": "active",
+    "outcome": null,
+    "choices": ["For", "Against", "Abstain"],
+    "quorumRaw": "100000",
+    "startAt": "2026-08-01T12:00:00Z",
+    "endAt": "2026-08-14T18:00:00Z",
+    "related": { "voteSummary": null, "votes": null, "evidence": null }
+  }
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>"
@@ -217,7 +396,24 @@ curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>"
 
 Vote totals, quorum progress, per-choice breakdown. Paid (plus).
 
-`data`: `{ proposal: { proposalKey, title }, totals: { votes, uniqueVoters, votingPower } | null, quorum: { raw, progress, reached } | null, choices: [{ key, label, votes, votingPower }], coverageStatus, readiness }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "proposal": { "proposalKey": "v2:ens-dao:snapshot:0xabc...", "title": "Fund the governance working group" },
+    "totals": { "votes": 1234, "uniqueVoters": 900, "votingPower": "4567890123" },
+    "quorum": { "raw": "100000", "progress": "0.78", "reached": true },
+    "choices": [
+      { "key": "for", "label": "For", "votes": 900, "votingPower": "3500000000" },
+      { "key": "against", "label": "Against", "votes": 300, "votingPower": "1000000000" },
+      { "key": "abstain", "label": "Abstain", "votes": 34, "votingPower": "67890123" }
+    ],
+    "coverageStatus": "ready",
+    "readiness": "ready"
+  }
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes/summary"
@@ -229,7 +425,20 @@ Vote rows. Paid (plus).
 
 Params: `order` (`power` default | `time`), `limit` (1–500, default 100), `cursor`.
 
-Item shape: `{ voteId, voterIdentity, voterAddress, choiceKey, choice, votingPower, votedAt, transactionHash }`.
+Example item shape:
+
+```json
+{
+  "voteId": "vote-321",
+  "voterIdentity": "voter:0xdef...",
+  "voterAddress": "0xdef...",
+  "choiceKey": "for",
+  "choice": "For",
+  "votingPower": "3500000000",
+  "votedAt": "2026-08-02T08:00:00Z",
+  "transactionHash": "0xtxhash..."
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes?order=power&limit=100"
@@ -239,7 +448,25 @@ curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes?order=power
 
 Optional research/audit bundle: provenance, source references, intelligence status, quality flags, limitations. Paid (plus). Use for citation/audit/security answers only — ordinary proposal explanations should skip it.
 
-`data`: `{ proposal: { proposalKey, title, sourceUrl }, provenance: [{ field, source, provider, observedAt }], intelligence: { status, warnings }, qualityFlags: string[], warnings: string[] }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "proposal": {
+      "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+      "title": "Fund the governance working group",
+      "sourceUrl": "https://snapshot.org/proposal/0xabc..."
+    },
+    "provenance": [
+      { "field": "bodyText", "source": "snapshot", "provider": "registry", "observedAt": "2026-08-01T12:00:05Z" }
+    ],
+    "intelligence": { "status": "ready", "warnings": [] },
+    "qualityFlags": ["registry_body_available", "registry_quorum_available"],
+    "warnings": []
+  }
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/evidence"
@@ -259,7 +486,16 @@ Monthly activity timeline. Paid (plus).
 
 Params: `metric` (`proposals_created` | `votes_cast`, required), `fromMonth`/`toMonth` (YYYY-MM, max 240 months).
 
-`data`: `[{ month, count }]` (shape per metric).
+Example response `data`:
+
+```json
+{
+  "data": [
+    { "month": "2026-01", "count": 4 },
+    { "month": "2026-02", "count": 6 }
+  ]
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/daos/ens-dao/timeline?metric=proposals_created&fromMonth=2026-01&toMonth=2026-08"
@@ -271,7 +507,17 @@ DAO voter ranking. Paid (plus).
 
 Params: `limit` (1–100, default 25), `cursor`.
 
-Item shape: `{ rank, voterIdentity, totalVotingPower, voteCount, proposalCount }`.
+Example item shape:
+
+```json
+{
+  "rank": 1,
+  "voterIdentity": "voter:0xdef...",
+  "totalVotingPower": "4567890123",
+  "voteCount": 42,
+  "proposalCount": 30
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/daos/ens-dao/voters?limit=25"
@@ -281,7 +527,29 @@ curl -s "https://agent-api.degov.ai/v2/daos/ens-dao/voters?limit=25"
 
 Voter profile across DAOs. Paid (plus).
 
-`data`: `{ voterIdentity, daoCount, voteCount, proposalCount, totalVotingPower, daos: [{ daoId, voteCount, proposalCount, totalVotingPower, firstVoteAt, lastVoteAt }] }`.
+Example response `data`:
+
+```json
+{
+  "data": {
+    "voterIdentity": "voter:0xdef...",
+    "daoCount": 3,
+    "voteCount": 77,
+    "proposalCount": 55,
+    "totalVotingPower": "7890123456",
+    "daos": [
+      {
+        "daoId": "ens-dao",
+        "voteCount": 42,
+        "proposalCount": 30,
+        "totalVotingPower": "4567890123",
+        "firstVoteAt": "2024-01-01T00:00:00Z",
+        "lastVoteAt": "2026-08-02T08:00:00Z"
+      }
+    ]
+  }
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>"
@@ -293,7 +561,17 @@ Voter vote history. Paid (plus).
 
 Params: `daoId`, `from`/`to` (RFC 3339, max 365 days), `limit` (1–100, default 50), `cursor`.
 
-Item shape: `{ proposal: { proposalKey, title }, choiceKey, votingPower, votedAt, transactionHash }`.
+Example item shape:
+
+```json
+{
+  "proposal": { "proposalKey": "v2:ens-dao:snapshot:0xabc...", "title": "Fund the governance working group" },
+  "choiceKey": "for",
+  "votingPower": "3500000000",
+  "votedAt": "2026-08-02T08:00:00Z",
+  "transactionHash": "0xtxhash..."
+}
+```
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"

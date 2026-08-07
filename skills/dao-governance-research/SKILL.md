@@ -20,15 +20,15 @@ Invoke this skill for questions such as:
 - "What's the Uniswap governance mechanism?"
 - "How do I participate in Arbitrum governance?"
 
-The Degov Agent API is a plain REST API. This skill documents its surface (endpoints, parameters, envelopes, errors) and how to pay for paid endpoints with x402 via the MetaMask agent wallet. There is no Degov CLI: assemble HTTP calls directly from the endpoint cards in `references/api-v2.md`.
+The Degov Agent API is a plain REST API. This skill documents its surface (endpoints, parameters, envelopes, errors) and how to pay for paid endpoints with x402 via the MetaMask agent wallet. There is no Degov CLI: assemble HTTP calls directly from the endpoint cards in [api-v2.md](references/api-v2.md).
 
 ## Prerequisites
 
-| Path                                                                       | Requirements                                                        | Install                                                                                                                 |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Free endpoints (`meta/pricing`, `meta/data-status`, `daos`, `daos/:daoId`) | None                                                                | —                                                                                                                       |
-| Paid endpoints (standard/plus tiers)                                       | `mm` CLI + MetaMask agent-wallet skill + Base USDC in the mm wallet | `npm install -g @metamask/agent-wallet` and `npx skills add metaMask/agent-skills` (details in `references/payment.md`) |
-| Web-only fallback                                                          | None                                                                | —                                                                                                                       |
+| Path                                                                       | Requirements                                                        | Install                                                                                                                             |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Free endpoints (`meta/pricing`, `meta/data-status`, `daos`, `daos/:daoId`) | None                                                                | —                                                                                                                                   |
+| Paid endpoints (standard/plus tiers)                                       | `mm` CLI + MetaMask agent-wallet skill + Base USDC in the mm wallet | `npm install -g @metamask/agent-wallet` and `npx skills add metaMask/agent-skills` (details in [payment.md](references/payment.md)) |
+| Web-only fallback                                                          | None                                                                | —                                                                                                                                   |
 
 Paid calls require a MetaMask agent wallet account because x402 payment authorizations are signed by `mm`. The MetaMask skill is the canonical documentation for `mm` and includes the `x402_pay.py` payment ceremony script; this skill composes with it instead of re-implementing payments. If the user has no MetaMask account or declines the paid path, use web search only (see the consent flow below).
 
@@ -44,30 +44,30 @@ Before the first API call in a session:
 
 ## Endpoint routing
 
-Match the user's intent to an endpoint, then read the endpoint card in `references/api-v2.md` before constructing the request. All requests return the v2 envelope `{ data, meta }`; errors return `{ error: { code, message }, meta }` (see `references/errors.md`). Paid endpoints return `402` with a `PAYMENT-REQUIRED` header until paid (see `references/x402.md` and the payment ceremony below).
+Match the user's intent to an endpoint, then read the endpoint card in [api-v2.md](references/api-v2.md) before constructing the request. All requests return the v2 envelope `{ data, meta }`; errors return `{ error: { code, message }, meta }` (see [errors.md](references/errors.md)). Paid endpoints return `402` with a `PAYMENT-REQUIRED` header until paid (see [x402.md](references/x402.md) and the payment ceremony below).
 
-| User intent                                                      | Endpoint(s)                                                                                             | Tier            | Reference  |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------- | ---------- |
-| Is the API healthy / how fresh is the data                       | `GET /v2/meta/data-status`                                                                              | free            | api-v2.md  |
-| Live pricing and per-endpoint prices                             | `GET /v2/meta/pricing`                                                                                  | free            | pricing.md |
-| Which DAOs are covered                                           | `GET /v2/daos` (filters: `hasVoteData`, `hasForumData`, `coverageStatus`)                               | free            | api-v2.md  |
-| DAO summary / proposal counts / participation                    | `GET /v2/daos/:daoId`                                                                                   | free            | api-v2.md  |
-| What a DAO has been doing (recent proposals, by time window)     | `GET /v2/proposals` (`daoId`, `timeField`, `from`, `to`, `sort`)                                        | standard        | api-v2.md  |
-| What happened in governance this week / today                    | `GET /v2/events` (`from`+`to` required, `eventTypes`) or `GET /v2/signals` (`from`+`to`, `signalTypes`) | standard        | api-v2.md  |
-| Explain a specific proposal (by URL/title/external id)           | `GET /v2/proposals/resolve` → `GET /v2/proposals/:proposalKey`                                          | standard → plus | api-v2.md  |
-| Proposal vote totals / per-vote rows                             | `GET /v2/proposals/:proposalKey/votes/summary` / `.../votes`                                            | plus            | api-v2.md  |
-| Citation/audit bundle for a proposal (provenance, quality flags) | `GET /v2/proposals/:proposalKey/evidence`                                                               | plus            | api-v2.md  |
-| Recent forum discussion                                          | `GET /v2/forum-topics` (`daoId`, `governanceRelated`, `sort`) → `GET /v2/forum-topics/:topicKey`        | standard → plus | api-v2.md  |
-| DAO activity trend over months                                   | `GET /v2/daos/:daoId/timeline` (`metric`, `fromMonth`, `toMonth`)                                       | plus            | api-v2.md  |
-| Top voters / a voter's profile and vote history                  | `GET /v2/daos/:daoId/voters` → `GET /v2/voters/:voterIdentity` → `GET /v2/voters/:voterIdentity/votes`  | plus            | api-v2.md  |
+| User intent                                                      | Endpoint(s)                                                                                             | Tier            | Reference                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------- |
+| Is the API healthy / how fresh is the data                       | `GET /v2/meta/data-status`                                                                              | free            | [api-v2.md](references/api-v2.md)   |
+| Live pricing and per-endpoint prices                             | `GET /v2/meta/pricing`                                                                                  | free            | [pricing.md](references/pricing.md) |
+| Which DAOs are covered                                           | `GET /v2/daos` (filters: `hasVoteData`, `hasForumData`, `coverageStatus`)                               | free            | [api-v2.md](references/api-v2.md)   |
+| DAO summary / proposal counts / participation                    | `GET /v2/daos/:daoId`                                                                                   | free            | [api-v2.md](references/api-v2.md)   |
+| What a DAO has been doing (recent proposals, by time window)     | `GET /v2/proposals` (`daoId`, `timeField`, `from`, `to`, `sort`)                                        | standard        | [api-v2.md](references/api-v2.md)   |
+| What happened in governance this week / today                    | `GET /v2/events` (`from`+`to` required, `eventTypes`) or `GET /v2/signals` (`from`+`to`, `signalTypes`) | standard        | [api-v2.md](references/api-v2.md)   |
+| Explain a specific proposal (by URL/title/external id)           | `GET /v2/proposals/resolve` → `GET /v2/proposals/:proposalKey`                                          | standard → plus | [api-v2.md](references/api-v2.md)   |
+| Proposal vote totals / per-vote rows                             | `GET /v2/proposals/:proposalKey/votes/summary` / `.../votes`                                            | plus            | [api-v2.md](references/api-v2.md)   |
+| Citation/audit bundle for a proposal (provenance, quality flags) | `GET /v2/proposals/:proposalKey/evidence`                                                               | plus            | [api-v2.md](references/api-v2.md)   |
+| Recent forum discussion                                          | `GET /v2/forum-topics` (`daoId`, `governanceRelated`, `sort`) → `GET /v2/forum-topics/:topicKey`        | standard → plus | [api-v2.md](references/api-v2.md)   |
+| DAO activity trend over months                                   | `GET /v2/daos/:daoId/timeline` (`metric`, `fromMonth`, `toMonth`)                                       | plus            | [api-v2.md](references/api-v2.md)   |
+| Top voters / a voter's profile and vote history                  | `GET /v2/daos/:daoId/voters` → `GET /v2/voters/:voterIdentity` → `GET /v2/voters/:voterIdentity/votes`  | plus            | [api-v2.md](references/api-v2.md)   |
 
-Multi-step user journeys live in `workflows/` — `discovery.md` (DAO discovery), `recent-activity.md` (what happened this week), `explain-proposal.md` (explain a specific proposal), `proposal-security.md` (security review data fetch, bridging to the `dao-governance-security` skill), `evidence.md` (citation/audit bundles), `payment-setup.md` (first-time payment onboarding), `troubleshooting.md` (failure decision tree). Load the matching workflow when the request is a pattern rather than a single endpoint.
+Multi-step user journeys live in `workflows/` — [discovery.md](workflows/discovery.md) (DAO discovery), [recent-activity.md](workflows/recent-activity.md) (what happened this week), [explain-proposal.md](workflows/explain-proposal.md) (explain a specific proposal), [proposal-security.md](workflows/proposal-security.md) (security review data fetch, bridging to the `dao-governance-security` skill), [evidence.md](workflows/evidence.md) (citation/audit bundles), [payment-setup.md](workflows/payment-setup.md) (first-time payment onboarding), [troubleshooting.md](workflows/troubleshooting.md) (failure decision tree). Load the matching workflow when the request is a pattern rather than a single endpoint.
 
 ## Paid-call consent flow
 
 Before any paid endpoint is used, ask the user whether they want to use the Degov Agent API paid path. Present it as a short two-option choice:
 
-> Your question is about DAO governance, so I can answer it more accurately with the Degov Agent API. Paid research endpoints use a small x402 fee in USDC on Base, signed by your MetaMask agent wallet. The exact budget guidance should come from `/v2/meta/pricing` (or `mm wallet balance --chain-id 8453`), not from hardcoded estimates.
+> Your question is about DAO governance, so I can answer it more accurately with the Degov Agent API. Paid research endpoints use a small x402 fee in USDC on Base, signed by your MetaMask agent wallet. The exact budget guidance should come from `/v2/meta/pricing` (or `mm wallet balance --chain-ids 8453`), not from hardcoded estimates.
 >
 > Choose one:
 >
@@ -83,7 +83,7 @@ Before any paid endpoint is used, ask the user whether they want to use the Dego
 
 Paid endpoints respond `402 Payment Required` with a base64 `PAYMENT-REQUIRED` header (x402 v2) and a JSON body containing the payment requirement. The degov offers are standard x402 v2: `scheme: exact`, network `eip155:8453`, USDC on Base, EIP-3009 (`assetTransferMethod: eip3009`), with the EIP-712 domain name/version included in `extra`.
 
-To pay, compose with the MetaMask agent-wallet skill (its `references/x402.md` and `scripts/x402_pay.py`):
+To pay, compose with the MetaMask agent-wallet skill (its [x402.md](references/x402.md) and `scripts/x402_pay.py`):
 
 1. Load the metamask-agent-wallet skill and locate its `x402_pay.py` script.
 2. `python3 <skill-dir>/scripts/x402_pay.py inspect <paid-url>` — prints the payment requirement(s) as JSON (asset, amount, network, `payTo`, resource). **Show this to the user.**
@@ -127,7 +127,7 @@ Before using a paid endpoint, apply the paid-call consent flow above.
 
 ### Cursor pagination
 
-List endpoints paginate with `limit` + `cursor` (see `references/errors.md` for `CURSOR_INVALID` / `CURSOR_STALE`). The `meta.page` object in responses carries `limit`, `hasMore`, and `nextCursor`. When you need more than one page, follow `nextCursor`; bind filters to the request and do not reuse a cursor across different filter sets. If a cursor comes back stale (409), re-run the list without a cursor.
+List endpoints paginate with `limit` + `cursor` (see [errors.md](references/errors.md) for `CURSOR_INVALID` / `CURSOR_STALE`). The `meta.page` object in responses carries `limit`, `hasMore`, and `nextCursor`. When you need more than one page, follow `nextCursor`; bind filters to the request and do not reuse a cursor across different filter sets. If a cursor comes back stale (409), re-run the list without a cursor.
 
 ### Batch retrieval rule
 
@@ -175,4 +175,4 @@ Formatting rules: use markdown; keep the answer easy to scan; do not turn the wh
 - Turn API data into a user-friendly explanation instead of pasting raw responses; state when information came from the Degov Agent API versus the web.
 - Do not fabricate governance activity, proposals, or dates.
 - Use `GET /v2/meta/pricing` for live pricing; do not hardcode prices.
-- The v2 API is the only supported surface; v1 endpoints are frozen and not documented here (see the migration table in `references/api-v2.md`).
+- The v2 API is the only supported surface; v1 endpoints are frozen and not documented here (see the migration table in [api-v2.md](references/api-v2.md)).

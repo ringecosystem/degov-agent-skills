@@ -33,7 +33,7 @@ Never ask the user to paste a private key or mnemonic into chat; use `MM_PASSWOR
 4. **Verify**:
 
 ```bash
-mm wallet balance --chain-id 8453
+mm wallet balance --chain-ids 8453
 curl -s https://agent-api.degov.ai/v2/meta/pricing      # confirm live prices
 ```
 

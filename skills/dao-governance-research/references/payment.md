@@ -22,9 +22,9 @@ Never type passwords or mnemonics into chat or inline flags; use the `MM_PASSWOR
 ## Funding and balances
 
 - The API settles in USDC on **Base** (chain id `8453`). Fund the mm wallet's Base address with USDC.
-- Balance: `mm wallet balance --chain-id 8453`
+- Balance: `mm wallet balance --chain-ids 8453`
 - Add funds: `mm wallet add-fund` (shows a QR code and the address).
-- Withdraw unused USDC: `mm transfer <to-address> <amount> --chain-id 8453` — confirm recipient and amount with the user first.
+- Withdraw unused USDC: `mm transfer <to-address> <amount> --chain-ids 8453` — confirm recipient and amount with the user first.
 
 ## Spending policy and automation
 
@@ -43,5 +43,5 @@ Never type passwords or mnemonics into chat or inline flags; use the `MM_PASSWOR
 | `mm` commands return `AUTH_FAILED` / "No CLI refresh token"          | `mm login`                                                                                                                     |
 | `NOT_INITIALIZED` "Project not initialized"                          | `mm init`                                                                                                                      |
 | Balance shows 0 on Base                                              | Fund the Base address (`mm wallet add-fund`), USDC on chain 8453                                                               |
-| `402` after payment                                                  | Verify the settlement header; do not pay twice — see `x402.md` and `errors.md`                                                 |
+| `402` after payment                                                  | Verify the settlement header; do not pay twice — see [x402.md](x402.md) and [errors.md](errors.md)                             |
 | Offer rejected by `x402_pay.py` (domain/network/assetTransferMethod) | Report it; degov offers are standard x402 v2 (verified 2026-08) — rejection usually means a changed API or stale skill version |

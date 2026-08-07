@@ -54,7 +54,7 @@ Evidence sources to prefer:
 - Block explorers with verified contract source, ABI, token transfer views, and transaction simulation traces.
 - DAO treasury dashboards and official multisig/governor addresses.
 - Prior proposals by the same proposer or affecting the same contracts.
-- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context is needed. Use its `workflows/proposal-security.md` for the data-fetch call chain (resolve → proposal detail → vote summary → evidence).
+- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context is needed. Use its [proposal-security.md](../dao-governance-research/workflows/proposal-security.md) for the data-fetch call chain (resolve → proposal detail → vote summary → evidence).
 - The v2 proposal evidence bundle (`GET /v2/proposals/:proposalKey/evidence` via the `dao-governance-research` skill, plus tier): provenance, source references, intelligence quality flags, and limitations — useful for evidence-first checks and for classifying uncertainty (see the severity `Unknown` definition).
 
 Never ask the user to paste private keys, seed phrases, admin credentials, or non-public secrets.
@@ -316,10 +316,10 @@ Required sections are: `Overall risk`, `Confidence`, `Recommendation`, `Bottom l
 
 ## Examples and local validation
 
-Use the synthetic examples in `skills/dao-governance-security/examples/` to understand the expected shape of a completed analysis and to regression-check future edits:
+Use the synthetic examples in [examples/](examples/) to understand the expected shape of a completed analysis and to regression-check future edits:
 
-- `benign-operational-budget.md` shows a low-risk operational transfer where decoded actions, amount, recipient, proposer history, and process context match the proposal text.
-- `risky-treasury-drain-and-admin-grant.md` shows a critical-risk payload with a malicious or contradictory action, incorrect amount, suspicious recipient, suspicious proposer, and dangerous permission grant.
+- [benign-operational-budget.md](examples/benign-operational-budget.md) shows a low-risk operational transfer where decoded actions, amount, recipient, proposer history, and process context match the proposal text.
+- [risky-treasury-drain-and-admin-grant.md](examples/risky-treasury-drain-and-admin-grant.md) shows a critical-risk payload with a malicious or contradictory action, incorrect amount, suspicious recipient, suspicious proposer, and dangerous permission grant.
 
 Run the deterministic local validator after editing this skill or its examples:
 

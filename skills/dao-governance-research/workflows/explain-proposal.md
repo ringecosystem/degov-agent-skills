@@ -37,10 +37,10 @@ curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes?order=power
 ## Decision rules
 
 - `resolve` is optional — if a list/event/signal already returned the key, skip it.
-- Ordinary explanations stop after detail (+ vote summary when asked). Do **not** call `evidence` unless the answer is citation/audit-oriented (see `evidence.md`).
+- Ordinary explanations stop after detail (+ vote summary when asked). Do **not** call `evidence` unless the answer is citation/audit-oriented (see [evidence.md](evidence.md)).
 - `bodyText` may be long; summarize, do not paste. Quote short key passages with the source link.
 - Readiness: if `meta.readiness.status` is `backfilling`/`stale`, say the data may lag.
 
 ## Output
 
-Plain-language explanation: what the proposal does, current status, vote totals/quorum when relevant, key dates, and the source links. For security-oriented questions, switch to `proposal-security.md`.
+Plain-language explanation: what the proposal does, current status, vote totals/quorum when relevant, key dates, and the source links. For security-oriented questions, switch to [proposal-security.md](proposal-security.md).

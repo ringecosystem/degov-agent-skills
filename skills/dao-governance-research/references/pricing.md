@@ -38,7 +38,7 @@
 
 ## Budget guidance
 
-- Ask the user how much they are willing to spend, or check the wallet balance first: `mm wallet balance --chain-id 8453` (Base USDC in the MetaMask agent wallet).
+- Ask the user how much they are willing to spend, or check the wallet balance first: `mm wallet balance --chain-ids 8453` (Base USDC in the MetaMask agent wallet).
 - Multiply the number of planned paid calls by the route price. Example: one standard list ($0.005) + two plus details ($0.01 × 2) ≈ $0.025.
 - Tell the user the expected cost **before** the first paid call, and let the wallet balance guide the cap.
 - An unpaid paid-endpoint request costs nothing: the API returns `402` and no settlement happens.

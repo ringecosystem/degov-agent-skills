@@ -4,7 +4,7 @@ Goal: answer "what has <DAO> been doing lately?" or "what happened in governance
 
 ## Steps
 
-1. Resolve the DAO (see `discovery.md`) and decide the window. Compute RFC 3339 timestamps, e.g. `from=<now - 168h>` to `<now>` for "this week".
+1. Resolve the DAO (see [discovery.md](discovery.md)) and decide the window. Compute RFC 3339 timestamps, e.g. `from=<now - 168h>` to `<now>` for "this week".
 
 2. Event-time feed (timing semantics matter — deadlines, vote starts/ends, "what happened today"):
 

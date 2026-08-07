@@ -29,4 +29,4 @@ Use `proposalCounts`, `outcomes`, `participation`, `coverageStatus`, and `voteCo
 
 ## Output
 
-State the resolved `daoId`, why it was chosen, and the DAO summary in plain language. Then continue with the relevant workflow (`recent-activity` or `explain-proposal`) or answer directly if the free data already answers the question.
+State the resolved `daoId`, why it was chosen, and the DAO summary in plain language. Then continue with the relevant workflow ([recent-activity.md](recent-activity.md) or [explain-proposal.md](explain-proposal.md)) or answer directly if the free data already answers the question.

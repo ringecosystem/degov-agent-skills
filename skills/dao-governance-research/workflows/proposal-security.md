@@ -4,7 +4,7 @@ Goal: fetch the data a security analysis needs, then hand the judgment to the `d
 
 ## Steps
 
-1. Resolve the proposal key (`explain-proposal.md` steps 1–2).
+1. Resolve the proposal key ([explain-proposal.md](explain-proposal.md) steps 1–2).
 
 2. Fetch detail (plus): `GET /v2/proposals/<proposalKey>` — `bodyText`, `proposerId`, `sourceUrl`, `discussionUrl`, `lifecycleStatus`, `outcome`, `choices`.
 

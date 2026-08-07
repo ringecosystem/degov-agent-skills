@@ -12,7 +12,7 @@ Do **not** call this for ordinary "explain this proposal" answers — the detail
 
 ## Steps
 
-1. Obtain the key (`explain-proposal.md` steps 1–2).
+1. Obtain the key ([explain-proposal.md](explain-proposal.md) steps 1–2).
 
 2. Fetch the bundle:
 

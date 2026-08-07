@@ -38,4 +38,5 @@ Decision tree for failed API calls and payment problems.
 
 ## Escalation
 
-If the same failure repeats after the fix, stop and report the exact request, response envelope, and error code instead of looping.
+If the same failure repeats after the fix, stop and report the exact request, response envelope, and
+error code instead of looping.

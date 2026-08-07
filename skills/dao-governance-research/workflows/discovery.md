@@ -1,6 +1,7 @@
 # Workflow: DAO discovery
 
-Goal: figure out which DAO(s) the API covers and pick the right `daoId` for a follow-up question. All free endpoints — no payment needed.
+Goal: figure out which DAO(s) the API covers and pick the right `daoId` for a follow-up question.
+All free endpoints — no payment needed.
 
 ## Steps
 
@@ -10,7 +11,9 @@ Goal: figure out which DAO(s) the API covers and pick the right `daoId` for a fo
 curl -s "https://agent-api.degov.ai/v2/daos?hasVoteData=true&limit=100"
 ```
 
-Note: production DAO ids often carry suffixes (`ens-dao`, `uniswap` is `uniswap` — verify). Match by `name` (case-insensitive) and by `daoId`; some short names are ambiguous, so prefer `daoId` in follow-up calls.
+Note: production DAO ids often carry suffixes (`ens-dao`, `uniswap` is `uniswap` — verify). Match by
+`name` (case-insensitive) and by `daoId`; some short names are ambiguous, so prefer `daoId` in
+follow-up calls.
 
 2. Narrow the candidate:
 
@@ -25,8 +28,13 @@ curl -s "https://agent-api.degov.ai/v2/meta/data-status?daoId=<daoId>"       # p
 curl -s "https://agent-api.degov.ai/v2/daos/<daoId>"
 ```
 
-Use `proposalCounts`, `outcomes`, `participation`, `coverageStatus`, and `voteCoverageStatus` to describe the DAO and set expectations (e.g. "ENS has 74 proposals, 1 active; vote data unavailable").
+Use `proposalCounts`, `outcomes`, `participation`, `coverageStatus`, and `voteCoverageStatus` to
+describe the DAO and set expectations (e.g. "ENS has 74 proposals, 1 active; vote data
+unavailable").
 
 ## Output
 
-State the resolved `daoId`, why it was chosen, and the DAO summary in plain language. Then continue with the relevant workflow ([recent-activity.md](recent-activity.md) or [explain-proposal.md](explain-proposal.md)) or answer directly if the free data already answers the question.
+State the resolved `daoId`, why it was chosen, and the DAO summary in plain language. Then continue
+with the relevant workflow ([recent-activity.md](recent-activity.md) or
+[explain-proposal.md](explain-proposal.md)) or answer directly if the free data already answers the
+question.

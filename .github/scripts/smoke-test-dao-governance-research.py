@@ -96,11 +96,25 @@ def validate_research_skill() -> None:
     except ValueError as exc:
         fail(f"{RESEARCH_SKILL_PATH}: malformed frontmatter")
     fields = {}
+    current_key = None
     for line in frontmatter.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith(" ") or line.startswith("\t"):
+            # prettier wraps long frontmatter values (e.g. description) as YAML
+            # block scalars; fold continuation lines back into the current key.
+            stripped = line.strip()
+            if ":" in stripped:
+                key, value = stripped.split(":", 1)
+                fields[key.strip()] = value.strip().strip('"')
+            elif current_key is not None:
+                fields[current_key] = (fields.get(current_key, "") + " " + stripped).strip()
+            continue
         if ":" not in line:
             continue
         key, value = line.split(":", 1)
-        fields[key.strip()] = value.strip().strip('"')
+        current_key = key.strip()
+        fields[current_key] = value.strip().strip('"')
     if fields.get("name") != "dao-governance-research":
         fail(f"{RESEARCH_SKILL_PATH}: expected name dao-governance-research, found {fields.get('name')!r}")
     if not fields.get("description"):

@@ -1,6 +1,7 @@
 # Degov Agent API v2 — endpoint cards
 
-The v2 API is the only supported surface. Base URL (production): `https://agent-api.degov.ai`. All endpoints return the uniform envelope:
+The v2 API is the only supported surface. Base URL (production): `https://agent-api.degov.ai`. All
+endpoints return the uniform envelope:
 
 ```json
 {
@@ -17,19 +18,30 @@ The v2 API is the only supported surface. Base URL (production): `https://agent-
 }
 ```
 
-- `data` is the payload; `meta.generatedAt` is when the response was built; `meta.dataAsOf` is how fresh the underlying data is.
-- `meta.readiness.status` ∈ `ready | backfilling | stale | unavailable`. Readiness is publication state — separate from domain coverage. Treat `backfilling`/`stale` as "data may lag", not "not found".
-- `meta.page` appears on list endpoints: `limit`, `hasMore`, `nextCursor` (opaque, revision-bound). Pass `nextCursor` back as `cursor` to continue; never reuse a cursor with different filters (409 `CURSOR_STALE`) and never construct one.
+- `data` is the payload; `meta.generatedAt` is when the response was built; `meta.dataAsOf` is how
+  fresh the underlying data is.
+- `meta.readiness.status` ∈ `ready | backfilling | stale | unavailable`. Readiness is publication
+  state — separate from domain coverage. Treat `backfilling`/`stale` as "data may lag", not "not
+  found".
+- `meta.page` appears on list endpoints: `limit`, `hasMore`, `nextCursor` (opaque, revision-bound).
+  Pass `nextCursor` back as `cursor` to continue; never reuse a cursor with different filters (409
+  `CURSOR_STALE`) and never construct one.
 - Errors: see [errors.md](errors.md).
-- Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see [x402.md](x402.md) and the payment ceremony in [SKILL.md](../SKILL.md).
+- Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see
+  [x402.md](x402.md) and the payment ceremony in [SKILL.md](../SKILL.md).
 
-Limits: `limit` max 100 (events max 200, votes max 500); event window max 90 days; proposal window max 365 days; timeline max 240 months.
+Limits: `limit` max 100 (events max 200, votes max 500); event window max 90 days; proposal window
+max 365 days; timeline max 240 months.
 
 ## Key acquisition
 
-- `proposalKey` is returned by `GET /v2/proposals`, `GET /v2/proposals/resolve`, `GET /v2/events`, and `GET /v2/signals`. Never construct or parse it; treat it as opaque. Follow-up endpoints (`detail`, `votes/summary`, `votes`, `evidence`) accept only the key.
-- `topicKey` is returned by `GET /v2/forum-topics`, `GET /v2/events` (forum event types), and `GET /v2/signals` (forum item type).
-- `voterIdentity` is returned by `GET /v2/daos/:daoId/voters`; also usable directly when you know the address/identity.
+- `proposalKey` is returned by `GET /v2/proposals`, `GET /v2/proposals/resolve`, `GET /v2/events`,
+  and `GET /v2/signals`. Never construct or parse it; treat it as opaque. Follow-up endpoints
+  (`detail`, `votes/summary`, `votes`, `evidence`) accept only the key.
+- `topicKey` is returned by `GET /v2/forum-topics`, `GET /v2/events` (forum event types), and
+  `GET /v2/signals` (forum item type).
+- `voterIdentity` is returned by `GET /v2/daos/:daoId/voters`; also usable directly when you know
+  the address/identity.
 
 ## Endpoints
 
@@ -62,7 +74,8 @@ Example response `data`:
 }
 ```
 
-`tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. See [pricing.md](pricing.md).
+`tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. See
+[pricing.md](pricing.md).
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/meta/pricing
@@ -92,7 +105,8 @@ Example response `data`:
 }
 ```
 
-Per-DAO `data`: `{ scope: "dao", daoId, daoName, coverageStatus, voteCoverageStatus, latestSuccessfulSync, dataAsOf }`.
+Per-DAO `data`:
+`{ scope: "dao", daoId, daoName, coverageStatus, voteCoverageStatus, latestSuccessfulSync, dataAsOf }`.
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/meta/data-status
@@ -124,7 +138,11 @@ Example item shape:
   "coverageStatus": "ready",
   "voteCoverageStatus": "ready",
   "proposalCounts": { "total": 74, "active": 1 },
-  "participation": { "uniqueVoters": "12345", "totalVotes": "234567", "totalVotingPower": "4567890123" },
+  "participation": {
+    "uniqueVoters": "12345",
+    "totalVotes": "234567",
+    "totalVotingPower": "4567890123"
+  },
   "latestActivity": {
     "proposalAt": "2026-08-01T12:00:00Z",
     "voteAt": "2026-08-02T08:00:00Z",
@@ -156,7 +174,11 @@ Example response `data`:
     "voteCoverageStatus": "ready",
     "proposalCounts": { "total": 74, "active": 1, "pending": 2, "closed": 71 },
     "outcomes": { "passed": 40, "failed": 20, "executed": 10, "canceled": 3, "unknown": 1 },
-    "participation": { "uniqueVoters": "12345", "totalVotes": "234567", "totalVotingPower": "4567890123" },
+    "participation": {
+      "uniqueVoters": "12345",
+      "totalVotes": "234567",
+      "totalVotingPower": "4567890123"
+    },
     "sourceTypes": ["snapshot", "degov-square"],
     "latestActivity": {
       "proposalAt": "2026-08-01T12:00:00Z",
@@ -213,9 +235,11 @@ curl -s "https://agent-api.degov.ai/v2/proposals?daoId=ens-dao&lifecycleStatus=a
 
 #### `GET /v2/proposals/resolve`
 
-External reference → canonical `proposalKey`. Paid (standard). Use only when you have a URL/title/external id and no key yet.
+External reference → canonical `proposalKey`. Paid (standard). Use only when you have a
+URL/title/external id and no key yet.
 
-Params: exactly one of `url`, `title`, or `externalId` (required), plus optional `daoId`, `provider`, and `limit` (1–20, default 5).
+Params: exactly one of `url`, `title`, or `externalId` (required), plus optional `daoId`,
+`provider`, and `limit` (1–20, default 5).
 
 Example response `data`:
 
@@ -242,7 +266,9 @@ curl -s "https://agent-api.degov.ai/v2/proposals/resolve?url=https://snapshot.or
 
 #### `GET /v2/events`
 
-Event-time governance feed (proposal created / voting started / ended / ending soon / executed / updated, forum discussion active). Paid (standard). `from` and `to` are **required**; window max 90 days.
+Event-time governance feed (proposal created / voting started / ended / ending soon / executed /
+updated, forum discussion active). Paid (standard). `from` and `to` are **required**; window max 90
+days.
 
 Params:
 
@@ -278,7 +304,8 @@ curl -s "https://agent-api.degov.ai/v2/events?from=2026-08-01T00:00:00Z&to=2026-
 
 #### `GET /v2/signals`
 
-Curated governance signals (proposal result, deadline reminders, governance radar, forum activity). Paid (standard). `from`/`to` required; window max 90 days.
+Curated governance signals (proposal result, deadline reminders, governance radar, forum activity).
+Paid (standard). `from`/`to` required; window max 90 days.
 
 Params:
 
@@ -363,7 +390,8 @@ curl -s "https://agent-api.degov.ai/v2/forum-topics?daoId=uniswap&governanceRela
 
 #### `GET /v2/proposals/:proposalKey`
 
-Proposal detail (body text, proposer, choices, quorum, lifecycle). Paid (plus). `proposalKey` must come from a list/resolve/event/signal result.
+Proposal detail (body text, proposer, choices, quorum, lifecycle). Paid (plus). `proposalKey` must
+come from a list/resolve/event/signal result.
 
 Example response `data`:
 
@@ -401,7 +429,10 @@ Example response `data`:
 ```json
 {
   "data": {
-    "proposal": { "proposalKey": "v2:ens-dao:snapshot:0xabc...", "title": "Fund the governance working group" },
+    "proposal": {
+      "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+      "title": "Fund the governance working group"
+    },
     "totals": { "votes": 1234, "uniqueVoters": 900, "votingPower": "4567890123" },
     "quorum": { "raw": "100000", "progress": "0.78", "reached": true },
     "choices": [
@@ -446,7 +477,9 @@ curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes?order=power
 
 #### `GET /v2/proposals/:proposalKey/evidence`
 
-Optional research/audit bundle: provenance, source references, intelligence status, quality flags, limitations. Paid (plus). Use for citation/audit/security answers only — ordinary proposal explanations should skip it.
+Optional research/audit bundle: provenance, source references, intelligence status, quality flags,
+limitations. Paid (plus). Use for citation/audit/security answers only — ordinary proposal
+explanations should skip it.
 
 Example response `data`:
 
@@ -459,7 +492,12 @@ Example response `data`:
       "sourceUrl": "https://snapshot.org/proposal/0xabc..."
     },
     "provenance": [
-      { "field": "bodyText", "source": "snapshot", "provider": "registry", "observedAt": "2026-08-01T12:00:05Z" }
+      {
+        "field": "bodyText",
+        "source": "snapshot",
+        "provider": "registry",
+        "observedAt": "2026-08-01T12:00:05Z"
+      }
     ],
     "intelligence": { "status": "ready", "warnings": [] },
     "qualityFlags": ["registry_body_available", "registry_quorum_available"],
@@ -484,7 +522,8 @@ curl -s "https://agent-api.degov.ai/v2/forum-topics/<topicKey>"
 
 Monthly activity timeline. Paid (plus).
 
-Params: `metric` (`proposals_created` | `votes_cast`, required), `fromMonth`/`toMonth` (YYYY-MM, max 240 months).
+Params: `metric` (`proposals_created` | `votes_cast`, required), `fromMonth`/`toMonth` (YYYY-MM, max
+240 months).
 
 Example response `data`:
 
@@ -565,7 +604,10 @@ Example item shape:
 
 ```json
 {
-  "proposal": { "proposalKey": "v2:ens-dao:snapshot:0xabc...", "title": "Fund the governance working group" },
+  "proposal": {
+    "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+    "title": "Fund the governance working group"
+  },
   "choiceKey": "for",
   "votingPower": "3500000000",
   "votedAt": "2026-08-02T08:00:00Z",
@@ -590,6 +632,8 @@ curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
 
 ## Implementation notes
 
-- Decimal amounts (`uniqueVoters`, `totalVotingPower`, `votes`, `replies`, ...) are strings; do not parse to float for display.
+- Decimal amounts (`uniqueVoters`, `totalVotingPower`, `votes`, `replies`, ...) are strings; do not
+  parse to float for display.
 - `ServingProposal`-sourced ids are never exposed; keys are the only stable handles.
-- The v2 cache is revision-bound: responses may be served from memory cache with `readiness.currentRevision`; a stale cursor means the serving revision advanced — re-run the list.
+- The v2 cache is revision-bound: responses may be served from memory cache with
+  `readiness.currentRevision`; a stale cursor means the serving revision advanced — re-run the list.

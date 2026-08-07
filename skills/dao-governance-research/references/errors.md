@@ -28,7 +28,12 @@ Every v2 endpoint returns failures through one envelope:
 
 ## Non-envelope HTTP errors
 
-- `414 URI Too Long` can occur if a route param exceeds the server's `maxParamLength`. v2 `proposalKey`/`topicKey` values are opaque and ~190 chars; the API server raised its `maxParamLength` (degov-agent-api fix, shipped 2026-08) so key-param routes (`proposals/:proposalKey`, `.../votes/summary`, `.../votes`, `.../evidence`, `forum-topics/:topicKey`) accept them. If a 414 still appears, the deployment is older than the fix — use the list/resolve endpoints and note the limitation.
+- `414 URI Too Long` can occur if a route param exceeds the server's `maxParamLength`. v2
+  `proposalKey`/`topicKey` values are opaque and ~190 chars; the API server raised its
+  `maxParamLength` (degov-agent-api fix, shipped 2026-08) so key-param routes
+  (`proposals/:proposalKey`, `.../votes/summary`, `.../votes`, `.../evidence`,
+  `forum-topics/:topicKey`) accept them. If a 414 still appears, the deployment is older than the
+  fix — use the list/resolve endpoints and note the limitation.
 
 ## 402 anatomy
 
@@ -68,10 +73,14 @@ A paid endpoint without payment returns `402` with:
 }
 ```
 
-`amount` is in atomic units (USDC has 6 decimals; e.g. `5000` = $0.005). `payTo` is the API's receiver — confirm it with the user before paying. See [x402.md](x402.md) for the full ceremony.
+`amount` is in atomic units (USDC has 6 decimals; e.g. `5000` = $0.005). `payTo` is the API's
+receiver — confirm it with the user before paying. See [x402.md](x402.md) for the full ceremony.
 
 ## Retry guidance
 
-- 402: pay once, retry once with the signature header. Never auto-retry a payment, and never re-pay an already-settled resource (a successful retry returns the resource plus a `PAYMENT-RESPONSE` settlement header).
-- 409 `CURSOR_STALE`: re-run the list fresh; the cost of one standard call may be incurred again — mention it if the user is budget-conscious.
+- 402: pay once, retry once with the signature header. Never auto-retry a payment, and never re-pay
+  an already-settled resource (a successful retry returns the resource plus a `PAYMENT-RESPONSE`
+  settlement header).
+- 409 `CURSOR_STALE`: re-run the list fresh; the cost of one standard call may be incurred again —
+  mention it if the user is budget-conscious.
 - 429: exponential backoff, then ask the user before continuing.

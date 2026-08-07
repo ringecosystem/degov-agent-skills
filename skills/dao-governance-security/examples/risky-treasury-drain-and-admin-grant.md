@@ -1,6 +1,8 @@
 # Example: Critical-risk treasury drain and admin grant
 
-This synthetic example demonstrates how `dao-governance-security` should escalate when a proposal's prose claims a modest payment but decoded actions move a materially different amount to a suspicious recipient and grant dangerous permissions to an unknown address from a new proposer.
+This synthetic example demonstrates how `dao-governance-security` should escalate when a proposal's
+prose claims a modest payment but decoded actions move a materially different amount to a suspicious
+recipient and grant dangerous permissions to an unknown address from a new proposer.
 
 ## Proposal input
 
@@ -8,16 +10,20 @@ This synthetic example demonstrates how `dao-governance-security` should escalat
 - Chain / governance system: Ethereum Governor + timelock
 - Proposal: `EXD-99`, "Pay final website maintenance invoice"
 - Status: queued for execution in 10 hours after a short emergency vote
-- Proposer: `0x9999999999999999999999999999999999999999`, new proposer with no prior ExampleDAO proposal history and no verified delegate profile
+- Proposer: `0x9999999999999999999999999999999999999999`, new proposer with no prior ExampleDAO
+  proposal history and no verified delegate profile
 - Proposal text: pay 25,000 USDC to the known web vendor multisig for completed website maintenance
 - Decoded executable actions:
-  1. Treasury call sends 2,500,000 USDC to `0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`, an unknown EOA not listed in the forum post or vendor registry
-  2. Timelock call grants `DEFAULT_ADMIN_ROLE` on the treasury controller to `0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`, an unverified contract deployed two days ago
-- Evidence links: official governance UI, forum post, decoded calldata view, treasury recipient registry, block explorer pages for recipient/proposer
+  1. Treasury call sends 2,500,000 USDC to `0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`, an unknown
+     EOA not listed in the forum post or vendor registry
+  2. Timelock call grants `DEFAULT_ADMIN_ROLE` on the treasury controller to
+     `0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`, an unverified contract deployed two days ago
+- Evidence links: official governance UI, forum post, decoded calldata view, treasury recipient
+  registry, block explorer pages for recipient/proposer
 
 ## Expected structured analysis output
 
-```markdown
+```text
 ## Governance proposal security analysis: EXD-99 — Pay final website maintenance invoice
 
 Overall risk: Critical

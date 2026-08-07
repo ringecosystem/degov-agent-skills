@@ -6,17 +6,20 @@ This repository packages DAO governance skills so agents can answer governance q
 
 ## What is included
 
-- `skills/dao-governance-research/SKILL.md`: the agent-facing governance research guide.
-- `skills/dao-governance-security/SKILL.md`: the proposal security-analysis rubric for evaluating executable actions, funds flow, permissions, proposer/process anomalies, uncertainty, and recommended user actions.
-- `skills/dao-governance-research/scripts/`: a TypeScript helper CLI for Degov Agent API calls and payment-wallet management.
+- `skills/dao-governance-research/SKILL.md`: the agent-facing governance research guide. It documents the Degov Agent API v2 surface (endpoint routing table, prerequisites, preflight, paid-call consent flow) and points to:
+  - `skills/dao-governance-research/references/`: endpoint cards (`api-v2.md`), pricing, errors, x402 payment protocol, and MetaMask payment setup.
+  - `skills/dao-governance-research/workflows/`: repeatable multi-step patterns (discovery, recent activity, explain proposal, proposal security review, evidence/citations, payment setup, troubleshooting).
+- `skills/dao-governance-security/SKILL.md`: the proposal security-analysis rubric for evaluating executable actions, funds flow, permissions, proposer/process anomalies, uncertainty, and recommended user actions, plus synthetic example analyses in `skills/dao-governance-security/examples/`.
 - `scripts/tests/`: repository-owned validation and smoke-test entry points used by CI and local checks.
+
+There is no Degov CLI and no local wallet in this repository. Agents call the REST API directly using the endpoint cards, and paid calls are settled with x402 payments signed by the MetaMask agent wallet (see below).
 
 ## What the skills do
 
 The `dao-governance-research` skill helps agents:
 
-- discover covered DAOs through free public endpoints
-- use Degov Agent API as the primary evidence source when recent governance data matters
+- discover covered DAOs through free v2 endpoints
+- use Degov Agent API v2 as the primary evidence source when recent governance data matters
 - use web search as a secondary source when API coverage is missing, stale, or too shallow
 - ask the user before making paid x402 API calls
 - turn API results into clear, source-aware explanations instead of raw JSON dumps
@@ -29,24 +32,7 @@ The `dao-governance-security` skill helps agents:
 - classify findings with clear severity levels from Critical through Unknown
 - produce a required final analysis format with evidence, assumptions, uncertainties, and concrete recommended user actions
 
-## Proposal security examples and validation
-
-The security skill includes synthetic example analyses that can be used for local review without querying live APIs:
-
-- `skills/dao-governance-security/examples/benign-operational-budget.md`: a low-risk operational treasury transfer where proposal text, decoded action, recipient, amount, proposer history, and process context line up.
-- `skills/dao-governance-security/examples/risky-treasury-drain-and-admin-grant.md`: a critical-risk proposal where decoded actions contradict the prose, move an incorrect amount to a suspicious recipient, come from a suspicious proposer, and grant a dangerous permission.
-
-Run the deterministic validator from the repository root:
-
-```bash
-pnpm run validate:dao-governance-security
-```
-
-The validator checks that `skills/dao-governance-security/SKILL.md` is loadable as a skill, that its required final-analysis sections are present, and that both examples follow the structured output contract. The offline smoke test also validates the `dao-governance-research` skill frontmatter:
-
-```bash
-pnpm run smoke:dao-governance-research
-```
+## Degov Agent API model (v2)
 
 The default API endpoint is:
 
@@ -54,77 +40,67 @@ The default API endpoint is:
 https://agent-api.degov.ai
 ```
 
-## Public API model
+All v2 endpoints return the uniform envelope `{ data, meta }` (RFC 3339 timestamps, decimal strings, opaque `proposalKey`/`topicKey` handles, revision-bound cursor pagination, readiness status).
 
-Free endpoints are available for basic discovery:
+Free endpoints (no payment):
 
-- `GET /health`
-- `GET /v1/meta/pricing`
-- `GET /v1/daos`
+- `GET /v2/meta/pricing`
+- `GET /v2/meta/data-status`
+- `GET /v2/daos`
+- `GET /v2/daos/:daoId`
 
-Paid research endpoints use x402 payments on Base USDC and should only be called after user consent:
+Standard endpoints (small x402 fee, currently $0.005 per call):
 
-- `GET /v1/activity`
-- `GET /v1/governance-events`
-- `GET /v1/daos/:daoId/brief`
-- `GET /v1/items/:kind/:externalId`
-- `GET /v1/system/freshness`
+- `GET /v2/proposals`
+- `GET /v2/proposals/resolve`
+- `GET /v2/events`
+- `GET /v2/signals`
+- `GET /v2/forum-topics`
 
-## Wallet safety
+Plus endpoints (currently $0.01 per call):
 
-The helper CLI creates a dedicated local wallet for small API payments. It does not ask users to paste private keys into chat.
+- `GET /v2/daos/:daoId/timeline`
+- `GET /v2/proposals/:proposalKey`
+- `GET /v2/proposals/:proposalKey/votes/summary`
+- `GET /v2/proposals/:proposalKey/votes`
+- `GET /v2/proposals/:proposalKey/evidence`
+- `GET /v2/forum-topics/:topicKey`
+- `GET /v2/daos/:daoId/voters`
+- `GET /v2/voters/:voterIdentity`
+- `GET /v2/voters/:voterIdentity/votes`
 
-Default local wallet state is stored outside the repository:
+The v1 endpoints (`/v1/activity`, `/v1/governance-events`, `/v1/daos/:daoId/brief`, `/v1/items/...`, `/v1/system/freshness`) are frozen and removed from this documentation; a v1 → v2 migration table lives in `skills/dao-governance-research/references/api-v2.md`.
 
-```text
-~/.agents/state/dao-governance-research/wallet.json
-```
+## Payments
 
-Keep wallet files, passphrases, `.env` files, logs, generated state, and other secrets out of version control.
-
-## Repository checks and formatting
-
-Repository-wide checks are exposed from the repository root. The root formatter scans the repository recursively for Prettier-supported files while respecting `.prettierignore` and `.gitignore`:
+Paid calls use x402 payments on Base in USDC. Keys and signing live in the **MetaMask agent wallet**; this repository never manages private keys. Prerequisites for the paid path (one-time):
 
 ```bash
-pnpm run format
+npm install -g @metamask/agent-wallet
+npx skills add metaMask/agent-skills
+```
+
+The user signs in with `mm login`, initializes with `mm init`, and funds the wallet's Base address with USDC. The payment ceremony composes with the MetaMask agent-wallet skill's `x402_pay.py` (`inspect` → user confirmation → `pay`); degov's x402 offers are standard v2 (verified against staging) and payable by that script as-is. See `skills/dao-governance-research/references/x402.md` and `references/payment.md`.
+
+Every paid call requires user consent first, and every payment requires confirmation of asset, amount, network, payTo, and resource URL. Users without a MetaMask account can still get web-only answers.
+
+## Validation
+
+Repository checks are exposed from the repository root (Python standard library plus prettier for Markdown):
+
+```bash
+pnpm install
 pnpm run format:check
 pnpm run validate:dao-governance-security
+pnpm run test:x402-compat
 pnpm run smoke:dao-governance-research
 ```
 
-The dao-governance-research helper package keeps local checks scoped to the governance skill. Run these from the skill directory; the package itself lives in `scripts/`:
+The offline smoke test validates the research skill frontmatter, references/workflows presence, absence of stale TypeScript files, the security-skill validator, and the x402 offer compatibility fixture. Live opt-ins:
 
 ```bash
-cd skills/dao-governance-research
-pnpm --dir scripts run format
-pnpm --dir scripts run format:check
-pnpm --dir scripts run check
+pnpm run smoke:dao-governance-research:free    # free endpoints (health, data-status, daos)
+pnpm run smoke:dao-governance-research:paid    # also asserts a live 402 offer is MetaMask-payable (zero cost)
 ```
 
-## Using the CLI helper
-
-From the skill directory:
-
-```bash
-cd skills/dao-governance-research
-pnpm --dir scripts install
-pnpm --dir scripts exec tsx degov-client.ts help
-```
-
-Common commands:
-
-```bash
-pnpm --dir scripts exec tsx degov-client.ts daos
-pnpm --dir scripts exec tsx degov-client.ts budget --usd 1
-pnpm --dir scripts exec tsx degov-client.ts wallet init
-pnpm --dir scripts exec tsx degov-client.ts wallet address
-pnpm --dir scripts exec tsx degov-client.ts wallet balance
-pnpm --dir scripts exec tsx degov-client.ts transfer <to-address> <amount-usdc>
-pnpm --dir scripts exec tsx degov-client.ts activity --hours 24 --limit 10
-pnpm --dir scripts exec tsx degov-client.ts governance-events --hours 24 --limit 200
-pnpm --dir scripts exec tsx degov-client.ts brief ens
-pnpm --dir scripts exec tsx degov-client.ts item proposal <id>
-pnpm --dir scripts exec tsx degov-client.ts freshness
-pnpm --dir scripts exec tsx degov-client.ts health
-```
+Set `DEGOV_AGENT_API_BASE_URL` to point the live checks at a staging instance (for example `http://127.0.0.1:8310`).

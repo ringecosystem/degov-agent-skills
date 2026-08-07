@@ -2,7 +2,7 @@
 name: dao-governance-security
 description: Load this skill when users ask whether a DAO governance proposal is safe, malicious, risky, unexpectedly permissive, or worth supporting from a security perspective. Use it to analyze proposal actions, funds flow, contract calls, permissions, proposer reputation, process anomalies, execution risk, evidence, uncertainty, and recommended user actions.
 metadata:
-  version: 0.1.0
+  version: 0.2.0
 ---
 
 # DAO Governance Proposal Security Skill
@@ -54,7 +54,8 @@ Evidence sources to prefer:
 - Block explorers with verified contract source, ABI, token transfer views, and transaction simulation traces.
 - DAO treasury dashboards and official multisig/governor addresses.
 - Prior proposals by the same proposer or affecting the same contracts.
-- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context is needed.
+- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context is needed. Use its `workflows/proposal-security.md` for the data-fetch call chain (resolve → proposal detail → vote summary → evidence).
+- The v2 proposal evidence bundle (`GET /v2/proposals/:proposalKey/evidence` via the `dao-governance-research` skill, plus tier): provenance, source references, intelligence quality flags, and limitations — useful for evidence-first checks and for classifying uncertainty (see the severity `Unknown` definition).
 
 Never ask the user to paste private keys, seed phrases, admin credentials, or non-public secrets.
 

@@ -3,7 +3,14 @@
 Goal: get a new environment ready for paid Degov API calls (one-time). The user performs the
 MetaMask account steps; the agent prepares everything else.
 
-## Prerequisites check
+## Scope confirmation
+
+Use this workflow only after the user chooses the paid Degov API path. If they have not chosen yet,
+present the paid API versus web-only choice from [SKILL.md](../SKILL.md) before inspecting wallet or
+account readiness. Choosing setup does not authorize a later payment; the first query plan and live
+cost estimate still require consent.
+
+## Prerequisites check (after paid-path selection)
 
 ```bash
 mm --version                      # compare with the MetaMask skill only when troubleshooting
@@ -41,8 +48,9 @@ curl -s https://agent-api.degov.ai/v2/meta/pricing      # confirm live prices
 ```
 
 5. **First paid call** (agent): follow the payment ceremony in [SKILL.md](../SKILL.md) — estimate
-   the plan with live pricing → obtain consent → `x402_pay.py inspect` → verify the offer matches
-   the approved plan → `pay`. Verify the settlement transaction hash and resource body.
+   the plan with live pricing → obtain consent for that plan and cost cap → `x402_pay.py inspect` →
+   verify the offer matches the approved plan → `pay`. Verify the settlement transaction hash and
+   resource body.
 
 ## Notes
 

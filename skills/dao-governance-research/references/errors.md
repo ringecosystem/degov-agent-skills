@@ -74,7 +74,8 @@ A paid endpoint without payment returns `402` with:
 ```
 
 `amount` is in atomic units (USDC has 6 decimals; e.g. `5000` = $0.005). `payTo` is the API's
-receiver — confirm it with the user before paying. See [x402.md](x402.md) for the full ceremony.
+receiver. Verify the complete offer against the approved query plan and cost cap; obtain approval
+again if `payTo` or any other offer field differs. See [x402.md](x402.md) for the full ceremony.
 
 ## Retry guidance
 

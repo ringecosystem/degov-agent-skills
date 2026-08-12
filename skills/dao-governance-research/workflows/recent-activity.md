@@ -28,8 +28,8 @@ curl -s "https://agent-api.degov.ai/v2/signals?from=<RFC3339>&to=<RFC3339>&signa
 curl -s "https://agent-api.degov.ai/v2/proposals?daoId=<daoId>&sort=updatedDesc&limit=25"
 ```
 
-5. For the most important items, follow their keys into detail (plus tier, confirm with user if the
-   budget matters):
+5. For the most important items, follow their keys into detail (plus tier). Include these calls in
+   the approved query plan and live cost estimate before paying:
 
 ```bash
 curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>"

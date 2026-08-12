@@ -34,5 +34,5 @@ security skill's own verification (block explorers, simulation, proposer history
   decoding requirements.
 - If the evidence bundle reports `intelligence.status: "unavailable"` or quality warnings, treat it
   as _absence of a dossier_, not as a clean bill of health.
-- Paid calls here are plus tier ($0.01 each); mention the expected cost when the user is
-  budget-conscious (consent flow first).
+- Detail, vote-summary, and evidence calls are plus tier. Include the calls that are actually needed
+  in the query plan, calculate their cost from live pricing, and obtain consent before paying.

@@ -81,6 +81,7 @@ receiver — confirm it with the user before paying. See [x402.md](x402.md) for 
 - 402: pay once, retry once with the signature header. Never auto-retry a payment, and never re-pay
   an already-settled resource (a successful retry returns the resource plus a `PAYMENT-RESPONSE`
   settlement header).
-- 409 `CURSOR_STALE`: re-run the list fresh; the cost of one standard call may be incurred again —
-  mention it if the user is budget-conscious.
-- 429: exponential backoff, then ask the user before continuing.
+- 409 `CURSOR_STALE`: a fresh paid request is a new call. Re-run only if it remains within the
+  approved query plan and cost cap; otherwise update the estimate and obtain approval again.
+- 429: back off before retrying an unpaid/free request. Do not automatically repeat a payment; treat
+  a new paid attempt as a new call under the approved plan.

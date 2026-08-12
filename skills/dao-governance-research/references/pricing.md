@@ -29,20 +29,19 @@ hardcode prices in answers.
 - `price`: decimal string in USD per call, or `null` for free routes.
 - `network`: payment network for x402 — currently `eip155:8453` (Base, USDC).
 
-## Tier summary (verify against live pricing)
+## Tier summary
 
-| Tier     | Typical price | Endpoints                                                                                                                                                              |
-| -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| free     | —             | `meta/pricing`, `meta/data-status`, `daos`, `daos/:daoId`                                                                                                              |
-| standard | $0.005        | `proposals`, `proposals/resolve`, `events`, `signals`, `forum-topics`                                                                                                  |
-| plus     | $0.01         | `daos/:daoId/timeline`, `proposals/:proposalKey` (+ votes/summary, votes, evidence), `forum-topics/:topicKey`, `daos/:daoId/voters`, `voters/:voterIdentity` (+ votes) |
+| Tier     | Price source             | Endpoints                                                                                                                                                              |
+| -------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| free     | no payment               | `meta/pricing`, `meta/data-status`, `daos`, `daos/:daoId`                                                                                                              |
+| standard | live pricing route table | `proposals`, `proposals/resolve`, `events`, `signals`, `forum-topics`                                                                                                  |
+| plus     | live pricing route table | `daos/:daoId/timeline`, `proposals/:proposalKey` (+ votes/summary, votes, evidence), `forum-topics/:topicKey`, `daos/:daoId/voters`, `voters/:voterIdentity` (+ votes) |
 
 ## Budget guidance
 
 - Ask the user how much they are willing to spend, or check the wallet balance first:
   `mm wallet balance --chain-ids 8453` (Base USDC in the MetaMask agent wallet).
-- Multiply the number of planned paid calls by the route price. Example: one standard list
-  ($0.005) + two plus details ($0.01 × 2) ≈ $0.025.
+- Sum the live route price for every call in the planned resource set.
 - Tell the user the expected cost **before** the first paid call, and let the wallet balance guide
   the cap.
 - An unpaid paid-endpoint request costs nothing: the API returns `402` and no settlement happens.

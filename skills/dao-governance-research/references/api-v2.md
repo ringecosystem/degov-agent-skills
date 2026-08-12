@@ -193,7 +193,7 @@ Example response `data`:
 curl -s https://agent-api.degov.ai/v2/daos/ens-dao
 ```
 
-### Standard ($0.005 each)
+### Standard tier
 
 #### `GET /v2/proposals`
 
@@ -386,7 +386,7 @@ Counts are decimal strings.
 curl -s "https://agent-api.degov.ai/v2/forum-topics?daoId=uniswap&governanceRelated=true&sort=repliesDesc&limit=25"
 ```
 
-### Plus ($0.01 each)
+### Plus tier
 
 #### `GET /v2/proposals/:proposalKey`
 

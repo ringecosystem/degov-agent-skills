@@ -65,12 +65,12 @@ Do not run a fixed preflight for every question. Check only what the selected pa
 
 ## Endpoint routing
 
-Match the user's intent to an endpoint, then read the endpoint card in
-[api-v2.md](references/api-v2.md) before constructing the request (live prices:
-[pricing.md](references/pricing.md)). All requests return the v2 envelope `{ data, meta }`; errors
-return `{ error: { code, message }, meta }` (see [errors.md](references/errors.md)). Paid endpoints
-return `402` with a `PAYMENT-REQUIRED` header until paid (see [x402.md](references/x402.md) and the
-payment ceremony below).
+Match the user's intent to an endpoint. Use the matching card in [api-v2.md](references/api-v2.md)
+when its parameters, response fields, pricing, or errors are not already covered by the selected
+workflow (live prices: [pricing.md](references/pricing.md)). All requests return the v2 envelope
+`{ data, meta }`; errors return `{ error: { code, message }, meta }` (see
+[errors.md](references/errors.md)). Paid endpoints return `402` with a `PAYMENT-REQUIRED` header
+until paid (see [x402.md](references/x402.md) and the payment ceremony below).
 
 | User intent                                                      | Endpoint(s)                                                                                             | Tier            |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------- |
@@ -204,9 +204,10 @@ the list without a cursor.
 
 ### Batch retrieval rule
 
-When a question needs more than one API call: decide the query plan first, run the necessary calls,
-collect all results, only then write the answer. Do not stream raw intermediate payloads to the user
-unless they explicitly ask for them.
+When a question needs more than one API call, plan independent calls together. Answer once the
+evidence is sufficient. If optional calls fail, time out, or are declined, use the successful
+results and state the resulting limitation. Do not stream raw intermediate payloads unless the user
+asks for them.
 
 ### Source follow-up rule
 

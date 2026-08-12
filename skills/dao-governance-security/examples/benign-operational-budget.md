@@ -1,6 +1,8 @@
 # Example: Low-risk operational budget transfer
 
-This synthetic example demonstrates how `dao-governance-security` should treat a routine executable proposal when the proposal text, decoded action, recipient identity, amount, proposer history, and process context all line up.
+This synthetic example demonstrates how `dao-governance-security` should treat a routine executable
+proposal when the proposal text, decoded action, recipient identity, amount, proposer history, and
+process context all line up.
 
 ## Proposal input
 
@@ -8,18 +10,21 @@ This synthetic example demonstrates how `dao-governance-security` should treat a
 - Chain / governance system: Ethereum Governor + timelock
 - Proposal: `EXD-42`, "Fund the Q3 bug bounty operations multisig"
 - Status: active vote, execution only after a 2-day timelock
-- Proposer: `0x1111111111111111111111111111111111111111`, known ExampleDAO security steward with prior passed operations proposals
-- Proposal text: send 25,000 USDC from the treasury to the verified bug bounty operations multisig for Q3 triage payments
+- Proposer: `0x1111111111111111111111111111111111111111`, known ExampleDAO security steward with
+  prior passed operations proposals
+- Proposal text: send 25,000 USDC from the treasury to the verified bug bounty operations multisig
+  for Q3 triage payments
 - Decoded executable action:
   - Target: ExampleDAO Treasury (`0x2222222222222222222222222222222222222222`)
   - Function: `transferToken(USDC, bountyOpsMultisig, 25000000000)`
   - Token: USDC (`0x3333333333333333333333333333333333333333`), 6 decimals, 25,000 USDC
-  - Recipient: Bug Bounty Ops 3-of-5 multisig (`0x4444444444444444444444444444444444444444`), listed in ExampleDAO docs and forum post
+  - Recipient: Bug Bounty Ops 3-of-5 multisig (`0x4444444444444444444444444444444444444444`), listed
+    in ExampleDAO docs and forum post
 - Evidence links: official governance UI, forum RFC, treasury docs page, decoded calldata view
 
 ## Expected structured analysis output
 
-```markdown
+```text
 ## Governance proposal security analysis: EXD-42 — Fund the Q3 bug bounty operations multisig
 
 Overall risk: Low

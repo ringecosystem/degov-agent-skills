@@ -74,12 +74,25 @@ def parse_frontmatter(path: Path) -> tuple[dict[str, str], str]:
         raise AssertionError(f'{path}: missing closing frontmatter delimiter') from exc
 
     fields: dict[str, str] = {}
+    current_key: str | None = None
     for line in raw_frontmatter.splitlines():
-        if not line.strip() or line.startswith(' ') or line.startswith('  '):
+        if not line.strip():
+            continue
+        if line.startswith(' ') or line.startswith('\t'):
+            # Indented line: either a block-scalar continuation of the current
+            # key (prettier wraps long descriptions) or a nested key. Nested
+            # keys are promoted loosely so version checks keep working.
+            stripped = line.strip()
+            if ':' in stripped:
+                k, v = stripped.split(':', 1)
+                fields[k.strip()] = v.strip().strip('"\'')
+            elif current_key is not None:
+                fields[current_key] = (fields.get(current_key, '') + ' ' + stripped).strip()
             continue
         match = re.match(r'^([A-Za-z0-9_-]+):\s*(.*)$', line)
         if match:
-            fields[match.group(1)] = match.group(2).strip().strip('"\'')
+            current_key = match.group(1)
+            fields[current_key] = match.group(2).strip().strip('"\'')
 
     if not body.strip():
         fail(f'{path}: body is empty')
@@ -131,9 +144,9 @@ def validate_skill() -> None:
     if len(description) > 1024:
         fail(f'{SKILL_PATH}: description exceeds 1024 characters')
     assert_contains_all(body, REQUIRED_OUTPUT_MARKERS, str(SKILL_PATH))
-    template_match = re.search(r'```markdown\n(?P<template>.*?)\n```', body, flags=re.DOTALL)
+    template_match = re.search(r'```(?:markdown|text)\n(?P<template>.*?)\n```', body, flags=re.DOTALL)
     if not template_match:
-        fail(f'{SKILL_PATH}: final-output Markdown template fence is missing')
+        fail(f'{SKILL_PATH}: final-output template fence is missing')
     template = template_match.group('template')
     assert_contains_all(template, REQUIRED_OUTPUT_MARKERS, f'{SKILL_PATH} final-output template')
     assert_markers_start_lines(template, REQUIRED_OUTPUT_MARKERS, f'{SKILL_PATH} final-output template')

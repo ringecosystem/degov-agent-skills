@@ -291,7 +291,7 @@ Example item shape:
 {
   "eventId": "evt-123",
   "eventType": "proposal_voting_ended",
-  "eventTimeMs": 1723046400000,
+  "eventTimeMs": "2026-08-07T16:00:00.000Z",
   "daoId": "ens-dao",
   "itemType": "proposal",
   "title": "Fund the governance working group",
@@ -436,12 +436,12 @@ Example response `data`:
       "proposalKey": "p1_<opaque-proposal-key>",
       "title": "Fund the governance working group"
     },
-    "totals": { "votes": 1234, "uniqueVoters": 900, "votingPower": "4567890123" },
+    "totals": { "votes": "1234", "uniqueVoters": "900", "votingPower": "4567890123" },
     "quorum": { "raw": "100000", "progress": "0.78", "reached": true },
     "choices": [
-      { "key": "for", "label": "For", "votes": 900, "votingPower": "3500000000" },
-      { "key": "against", "label": "Against", "votes": 300, "votingPower": "1000000000" },
-      { "key": "abstain", "label": "Abstain", "votes": 34, "votingPower": "67890123" }
+      { "key": "for", "label": "For", "votes": "900", "votingPower": "3500000000" },
+      { "key": "against", "label": "Against", "votes": "300", "votingPower": "1000000000" },
+      { "key": "abstain", "label": "Abstain", "votes": "34", "votingPower": "67890123" }
     ],
     "coverageStatus": "ready",
     "readiness": "ready"
@@ -532,10 +532,14 @@ Example response `data`:
 
 ```json
 {
-  "data": [
-    { "month": "2026-01", "count": 4 },
-    { "month": "2026-02", "count": 6 }
-  ]
+  "data": {
+    "daoId": "ens-dao",
+    "metric": "proposals_created",
+    "buckets": [
+      { "month": "2026-01", "value": "4" },
+      { "month": "2026-02", "value": "6" }
+    ]
+  }
 }
 ```
 
@@ -556,8 +560,8 @@ Example item shape:
   "rank": 1,
   "voterIdentity": "voter:0xdef...",
   "totalVotingPower": "4567890123",
-  "voteCount": 42,
-  "proposalCount": 30
+  "voteCount": "42",
+  "proposalCount": "30"
 }
 ```
 
@@ -575,15 +579,15 @@ Example response `data`:
 {
   "data": {
     "voterIdentity": "voter:0xdef...",
-    "daoCount": 3,
-    "voteCount": 77,
-    "proposalCount": 55,
+    "daoCount": "3",
+    "voteCount": "77",
+    "proposalCount": "55",
     "totalVotingPower": "7890123456",
     "daos": [
       {
         "daoId": "ens-dao",
-        "voteCount": 42,
-        "proposalCount": 30,
+        "voteCount": "42",
+        "proposalCount": "30",
         "totalVotingPower": "4567890123",
         "firstVoteAt": "2024-01-01T00:00:00Z",
         "lastVoteAt": "2026-08-02T08:00:00Z"
@@ -635,9 +639,10 @@ curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
 
 ## Implementation notes
 
-- High-precision values such as voting power and quorum amounts are decimal strings; preserve them
-  as strings instead of parsing them to floating point. Count types are endpoint-specific: DAO
-  participation aggregates may be strings, while vote-summary and voter-profile counts are numbers.
+- High-precision values and aggregate counts returned by governance/voter analytics are decimal
+  strings, including voting power, quorum amounts, vote-summary totals, timeline bucket values, and
+  voter profile/ranking counts. Preserve them as strings instead of parsing them to floating point.
+  Ordinary metadata counts such as `rank` and global data-status counters remain JSON numbers.
 - `ServingProposal`-sourced ids are never exposed; keys are the only stable handles.
 - The v2 cache is revision-bound: responses may be served from memory cache with
   `readiness.currentRevision`; a stale cursor means the serving revision advanced — re-run the list.

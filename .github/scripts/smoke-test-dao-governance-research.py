@@ -142,6 +142,17 @@ def validate_research_skill() -> None:
         fail(f"{REFERENCES_DIR / 'api-v2.md'}: must describe v1 as frozen legacy, not removed")
     if "v2:ens-dao:snapshot:" in api_reference or "v2:uniswap:forum:" in api_reference:
         fail(f"{REFERENCES_DIR / 'api-v2.md'}: key examples must remain opaque")
+    wire_shape_regressions = (
+        '"eventTimeMs": 1723046400000',
+        '"votes": 1234',
+        '"uniqueVoters": 900',
+        '"count": 4',
+        '"voteCount": 42',
+        '"daoCount": 3',
+    )
+    for stale_shape in wire_shape_regressions:
+        if stale_shape in api_reference:
+            fail(f"{REFERENCES_DIR / 'api-v2.md'}: stale v2 wire-shape example {stale_shape}")
     for workflow in REQUIRED_WORKFLOWS:
         path = WORKFLOWS_DIR / workflow
         if not path.is_file() or path.stat().st_size == 0:

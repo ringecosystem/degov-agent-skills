@@ -149,10 +149,20 @@ def validate_research_skill() -> None:
         '"count": 4',
         '"voteCount": 42',
         '"daoCount": 3',
+        '"voteSummary": null',
+        '"readiness": "ready"',
+        '"field": "bodyText"',
+        '"intelligence": { "status": "ready"',
     )
     for stale_shape in wire_shape_regressions:
         if stale_shape in api_reference:
             fail(f"{REFERENCES_DIR / 'api-v2.md'}: stale v2 wire-shape example {stale_shape}")
+    if '"coverageStatus": "ready",\n    "readiness": "ready"' in api_reference:
+        fail(f"{REFERENCES_DIR / 'api-v2.md'}: stale vote-summary coverage/readiness example")
+
+    pricing_reference = (REFERENCES_DIR / "pricing.md").read_text(encoding="utf-8")
+    if "check the wallet balance first" in pricing_reference:
+        fail(f"{REFERENCES_DIR / 'pricing.md'}: wallet checks must follow paid-path selection")
     for workflow in REQUIRED_WORKFLOWS:
         path = WORKFLOWS_DIR / workflow
         if not path.is_file() or path.stat().st_size == 0:

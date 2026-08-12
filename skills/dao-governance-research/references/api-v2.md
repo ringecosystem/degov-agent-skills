@@ -414,7 +414,11 @@ Example response `data`:
     "quorumRaw": "100000",
     "startAt": "2026-08-01T12:00:00Z",
     "endAt": "2026-08-14T18:00:00Z",
-    "related": { "voteSummary": null, "votes": null, "evidence": null }
+    "related": {
+      "voteSummary": "/v2/proposals/p1_<opaque-proposal-key>/votes/summary",
+      "votes": "/v2/proposals/p1_<opaque-proposal-key>/votes",
+      "evidence": "/v2/proposals/p1_<opaque-proposal-key>/evidence"
+    }
   }
 }
 ```
@@ -443,8 +447,8 @@ Example response `data`:
       { "key": "against", "label": "Against", "votes": "300", "votingPower": "1000000000" },
       { "key": "abstain", "label": "Abstain", "votes": "34", "votingPower": "67890123" }
     ],
-    "coverageStatus": "ready",
-    "readiness": "ready"
+    "coverageStatus": "complete",
+    "readiness": { "status": "ready" }
   }
 }
 ```
@@ -496,13 +500,16 @@ Example response `data`:
     },
     "provenance": [
       {
-        "field": "bodyText",
-        "source": "snapshot",
-        "provider": "registry",
+        "field": "title",
+        "source": "serving.proposals",
+        "provider": "snapshot",
         "observedAt": "2026-08-01T12:00:05Z"
       }
     ],
-    "intelligence": { "status": "ready", "warnings": [] },
+    "intelligence": {
+      "status": "unavailable",
+      "warnings": ["No persisted intelligence dossier exists for this proposal yet"]
+    },
     "qualityFlags": ["registry_body_available", "registry_quorum_available"],
     "warnings": []
   }

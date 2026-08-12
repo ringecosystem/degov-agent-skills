@@ -19,6 +19,9 @@ here.
 
 ## Account setup
 
+Run account and wallet readiness commands only after the user chooses the paid API path. Installing
+or configuring the wallet does not authorize a later payment.
+
 - `mm login` — sign in with MetaMask Mobile (QR) or browser (Google/Email). The user needs a
   MetaMask account.
 - `mm init` — select a wallet mode (`server-wallet` or `byok`) and, for server-wallet, a trading

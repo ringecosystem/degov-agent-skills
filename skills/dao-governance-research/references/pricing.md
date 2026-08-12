@@ -39,8 +39,9 @@ hardcode prices in answers.
 
 ## Budget guidance
 
-- Ask the user how much they are willing to spend, or check the wallet balance first:
-  `mm wallet balance --chain-ids 8453` (Base USDC in the MetaMask agent wallet).
+- Ask the user how much they are willing to spend. Only after they choose the paid API path, check
+  `mm wallet balance --chain-ids 8453` (Base USDC in the MetaMask agent wallet) to ensure the
+  planned cost fits the available balance.
 - Sum the live route price for every call in the planned resource set.
 - Tell the user the expected cost **before** the first paid call, and let the wallet balance guide
   the cap.

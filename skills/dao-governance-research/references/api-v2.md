@@ -1,7 +1,9 @@
 # Degov Agent API v2 — endpoint cards
 
-The v2 API is the only supported surface. Base URL (production): `https://agent-api.degov.ai`. All
-endpoints return the uniform envelope:
+This skill supports the v2 API. Production v1 remains available as a frozen legacy surface; new
+workflows should use v2. Base URL (production): `https://agent-api.degov.ai`. Successful responses
+and API validation/resource errors use the v2 envelopes described below. An unpaid `402` is an x402
+challenge with a separate header/body contract; see [x402.md](x402.md).
 
 ```json
 {
@@ -23,9 +25,10 @@ endpoints return the uniform envelope:
 - `meta.readiness.status` ∈ `ready | backfilling | stale | unavailable`. Readiness is publication
   state — separate from domain coverage. Treat `backfilling`/`stale` as "data may lag", not "not
   found".
-- `meta.page` appears on list endpoints: `limit`, `hasMore`, `nextCursor` (opaque, revision-bound).
-  Pass `nextCursor` back as `cursor` to continue; never reuse a cursor with different filters (409
-  `CURSOR_STALE`) and never construct one.
+- `meta.page` appears on list endpoints with `limit` and `hasMore`. `nextCursor` is present only
+  when `hasMore` is true. Pass it back as `cursor` to continue; never reuse a cursor with a
+  different endpoint, limit, filter set, or serving revision (409 `CURSOR_STALE`), and never
+  construct one.
 - Errors: see [errors.md](errors.md).
 - Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see
   [x402.md](x402.md) and the payment ceremony in [SKILL.md](../SKILL.md).
@@ -218,7 +221,7 @@ Example item shape:
 
 ```json
 {
-  "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+  "proposalKey": "p1_<opaque-proposal-key>",
   "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
   "title": "Fund the governance working group",
   "sourceUrl": "https://snapshot.org/proposal/0xabc...",
@@ -248,7 +251,7 @@ Example response `data`:
   "data": {
     "candidates": [
       {
-        "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+        "proposalKey": "p1_<opaque-proposal-key>",
         "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
         "title": "Fund the governance working group",
         "match": { "type": "url", "matchedFields": ["sourceUrl"] }
@@ -294,7 +297,7 @@ Example item shape:
   "title": "Fund the governance working group",
   "url": "https://snapshot.org/proposal/0xabc...",
   "importanceScore": 80,
-  "proposalKey": "v2:ens-dao:snapshot:0xabc..."
+  "proposalKey": "p1_<opaque-proposal-key>"
 }
 ```
 
@@ -333,7 +336,7 @@ Example item shape:
   "summary": "Proposal passed with 78% support",
   "sourceUrl": "https://snapshot.org/proposal/0xabc...",
   "severity": "info",
-  "proposalKey": "v2:ens-dao:snapshot:0xabc..."
+  "proposalKey": "p1_<opaque-proposal-key>"
 }
 ```
 
@@ -362,7 +365,7 @@ Example item shape:
 
 ```json
 {
-  "topicKey": "v2:uniswap:forum:topic-789",
+  "topicKey": "t1_<opaque-topic-key>",
   "identity": { "daoId": "uniswap", "provider": "forum", "externalId": "topic-789" },
   "title": "Should we adjust the UNI staking rewards?",
   "summary": "Community discussion on reward parameters",
@@ -398,7 +401,7 @@ Example response `data`:
 ```json
 {
   "data": {
-    "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+    "proposalKey": "p1_<opaque-proposal-key>",
     "identity": { "daoId": "ens-dao", "provider": "snapshot", "externalId": "0xabc..." },
     "title": "Fund the governance working group",
     "bodyText": "This proposal funds the working group...",
@@ -430,7 +433,7 @@ Example response `data`:
 {
   "data": {
     "proposal": {
-      "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+      "proposalKey": "p1_<opaque-proposal-key>",
       "title": "Fund the governance working group"
     },
     "totals": { "votes": 1234, "uniqueVoters": 900, "votingPower": "4567890123" },
@@ -487,7 +490,7 @@ Example response `data`:
 {
   "data": {
     "proposal": {
-      "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+      "proposalKey": "p1_<opaque-proposal-key>",
       "title": "Fund the governance working group",
       "sourceUrl": "https://snapshot.org/proposal/0xabc..."
     },
@@ -605,7 +608,7 @@ Example item shape:
 ```json
 {
   "proposal": {
-    "proposalKey": "v2:ens-dao:snapshot:0xabc...",
+    "proposalKey": "p1_<opaque-proposal-key>",
     "title": "Fund the governance working group"
   },
   "choiceKey": "for",
@@ -621,7 +624,7 @@ curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
 
 ## v1 → v2 migration table (for users of the previous skill version)
 
-| v1 (frozen, removed)              | v2 replacement                                                                     |
+| v1 (frozen legacy)                | v2 replacement                                                                     |
 | --------------------------------- | ---------------------------------------------------------------------------------- |
 | `GET /v1/activity`                | `GET /v2/proposals` / `GET /v2/events` / `GET /v2/signals`                         |
 | `GET /v1/governance-events`       | `GET /v2/events` (event-time feed)                                                 |
@@ -632,8 +635,9 @@ curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
 
 ## Implementation notes
 
-- Decimal amounts (`uniqueVoters`, `totalVotingPower`, `votes`, `replies`, ...) are strings; do not
-  parse to float for display.
+- High-precision values such as voting power and quorum amounts are decimal strings; preserve them
+  as strings instead of parsing them to floating point. Count types are endpoint-specific: DAO
+  participation aggregates may be strings, while vote-summary and voter-profile counts are numbers.
 - `ServingProposal`-sourced ids are never exposed; keys are the only stable handles.
 - The v2 cache is revision-bound: responses may be served from memory cache with
   `readiness.currentRevision`; a stale cursor means the serving revision advanced — re-run the list.

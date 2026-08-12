@@ -49,5 +49,6 @@ curl -s "https://agent-api.degov.ai/v2/proposals/<proposalKey>/votes/summary"
 
 ## Output
 
-Plain-language summary of the window: what happened, which DAO(s), timing, importance. Cite the
-event/signal sources (`url` fields) and say whether the data came from the API, the web, or both.
+Plain-language summary of the window: what happened, which DAO(s), timing, importance. Cite event
+sources from `url` and signal sources from `sourceUrl`, and say whether the data came from the API,
+the web, or both.

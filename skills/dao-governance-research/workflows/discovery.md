@@ -8,12 +8,15 @@ All free endpoints — no payment needed.
 1. Ambiguous or unknown DAO name → list the directory:
 
 ```bash
-curl -s "https://agent-api.degov.ai/v2/daos?hasVoteData=true&limit=100"
+curl -s "https://agent-api.degov.ai/v2/daos?limit=100"
 ```
 
 Note: production DAO ids often carry suffixes (`ens-dao`, `uniswap` is `uniswap` — verify). Match by
 `name` (case-insensitive) and by `daoId`; some short names are ambiguous, so prefer `daoId` in
 follow-up calls.
+
+Add `hasVoteData=true` only when the follow-up specifically requires vote or voter coverage; the
+unfiltered directory also includes DAOs covered through proposals or forums.
 
 2. Narrow the candidate:
 

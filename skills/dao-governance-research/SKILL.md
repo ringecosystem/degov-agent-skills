@@ -197,10 +197,10 @@ Before using a paid endpoint, apply the paid-call consent flow above.
 ### Cursor pagination
 
 List endpoints paginate with `limit` + `cursor` (see [errors.md](references/errors.md) for
-`CURSOR_INVALID` / `CURSOR_STALE`). The `meta.page` object in responses carries `limit`, `hasMore`,
-and `nextCursor`. When you need more than one page, follow `nextCursor`; bind filters to the request
-and do not reuse a cursor across different filter sets. If a cursor comes back stale (409), re-run
-the list without a cursor.
+`CURSOR_INVALID` / `CURSOR_STALE`). The `meta.page` object carries `limit` and `hasMore`, plus
+`nextCursor` when `hasMore` is true. Follow `nextCursor` when another page is needed; do not reuse a
+cursor across different endpoints, limits, filters, or serving revisions. If a cursor is stale
+(409), treat a fresh paid request as a new planned call.
 
 ### Batch retrieval rule
 
@@ -267,5 +267,5 @@ from primary-source interpretation when that distinction matters. Do not invent 
   information came from the Degov Agent API versus the web.
 - Do not fabricate governance activity, proposals, or dates.
 - Use `GET /v2/meta/pricing` for live pricing; do not hardcode prices.
-- The v2 API is the only supported surface; v1 endpoints are frozen and not documented here (see the
-  migration table in [api-v2.md](references/api-v2.md)).
+- This skill supports v2. Production v1 remains available as a frozen legacy surface but is not used
+  by these workflows (see the migration table in [api-v2.md](references/api-v2.md)).

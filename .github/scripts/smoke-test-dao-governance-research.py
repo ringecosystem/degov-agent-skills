@@ -124,6 +124,11 @@ def validate_research_skill() -> None:
     if not body.strip():
         fail(f"{RESEARCH_SKILL_PATH}: missing body")
 
+    # Contract wording regressions caught during production calibration: v1 is
+    # frozen but still reachable, and public keys must look opaque in examples.
+    if "v1 (frozen, removed)" in content or "v2 API is the only supported surface" in content:
+        fail(f"{RESEARCH_SKILL_PATH}: must not describe the reachable v1 API as removed")
+
     skill_text = content
     for reference in REQUIRED_REFERENCES:
         path = REFERENCES_DIR / reference
@@ -131,6 +136,12 @@ def validate_research_skill() -> None:
             fail(f"{path}: required reference is missing or empty")
         if reference not in skill_text:
             fail(f"{RESEARCH_SKILL_PATH}: does not reference {reference}")
+
+    api_reference = (REFERENCES_DIR / "api-v2.md").read_text(encoding="utf-8")
+    if "v1 (frozen, removed)" in api_reference or "v2 API is the only supported surface" in api_reference:
+        fail(f"{REFERENCES_DIR / 'api-v2.md'}: must describe v1 as frozen legacy, not removed")
+    if "v2:ens-dao:snapshot:" in api_reference or "v2:uniswap:forum:" in api_reference:
+        fail(f"{REFERENCES_DIR / 'api-v2.md'}: key examples must remain opaque")
     for workflow in REQUIRED_WORKFLOWS:
         path = WORKFLOWS_DIR / workflow
         if not path.is_file() or path.stat().st_size == 0:

@@ -1,9 +1,8 @@
-# Degov Agent API v2 — endpoint cards
+# Degov Agent API reference
 
-This skill supports the v2 API. Production v1 remains available as a frozen legacy surface; new
-workflows should use v2. Base URL (production): `https://agent-api.degov.ai`. Successful responses
-and API validation/resource errors use the v2 envelopes described below. An unpaid `402` is an x402
-challenge with a separate header/body contract; see [x402.md](x402.md).
+Base URL: `https://agent-api.degov.ai`. This document describes the current public resources,
+parameters, response envelopes, and limits. The `/v2` prefix shown in request paths is part of the
+current HTTP contract.
 
 ```json
 {
@@ -29,9 +28,9 @@ challenge with a separate header/body contract; see [x402.md](x402.md).
   when `hasMore` is true. Pass it back as `cursor` to continue; never reuse a cursor with a
   different endpoint, limit, filter set, or serving revision (409 `CURSOR_STALE`), and never
   construct one.
-- Errors: see [errors.md](errors.md).
-- Paid endpoints respond `402` with a `PAYMENT-REQUIRED` header until payment is attached — see
-  [x402.md](x402.md) and the payment ceremony in [SKILL.md](../SKILL.md).
+- Errors and recovery guidance: see [troubleshooting.md](troubleshooting.md).
+- Paid resources respond `402` with a `PAYMENT-REQUIRED` header until payment is attached. Delegate
+  payment handling to the wallet capability as described in [SKILL.md](../SKILL.md#payments).
 
 Limits: `limit` max 100 (events max 200, votes max 500); event window max 90 days; proposal window
 max 365 days; timeline max 240 months.
@@ -77,8 +76,8 @@ Example response `data`:
 }
 ```
 
-`tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. See
-[pricing.md](pricing.md).
+`tier` ∈ `free | standard | plus`; `price` is a decimal string or `null`. Always use this live
+resource for cost information instead of copying prices into long-lived instructions.
 
 ```bash
 curl -s https://agent-api.degov.ai/v2/meta/pricing
@@ -633,17 +632,6 @@ Example item shape:
 curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
 ```
 
-## v1 → v2 migration table (for users of the previous skill version)
-
-| v1 (frozen legacy)                | v2 replacement                                                                     |
-| --------------------------------- | ---------------------------------------------------------------------------------- |
-| `GET /v1/activity`                | `GET /v2/proposals` / `GET /v2/events` / `GET /v2/signals`                         |
-| `GET /v1/governance-events`       | `GET /v2/events` (event-time feed)                                                 |
-| `GET /v1/daos/:daoId/brief`       | `GET /v2/daos/:daoId` + `GET /v2/proposals?daoId=...`                              |
-| `GET /v1/items/:kind/:externalId` | `GET /v2/proposals/resolve` → `GET /v2/proposals/:proposalKey` (or `forum-topics`) |
-| `GET /v1/system/freshness`        | `GET /v2/meta/data-status`                                                         |
-| `GET /v1/meta/pricing`            | `GET /v2/meta/pricing`                                                             |
-
 ## Implementation notes
 
 - High-precision values and aggregate counts returned by governance/voter analytics are decimal
@@ -651,5 +639,5 @@ curl -s "https://agent-api.degov.ai/v2/voters/<voterIdentity>/votes?limit=50"
   voter profile/ranking counts. Preserve them as strings instead of parsing them to floating point.
   Ordinary metadata counts such as `rank` and global data-status counters remain JSON numbers.
 - `ServingProposal`-sourced ids are never exposed; keys are the only stable handles.
-- The v2 cache is revision-bound: responses may be served from memory cache with
+- The cache is revision-bound: responses may be served from memory cache with
   `readiness.currentRevision`; a stale cursor means the serving revision advanced — re-run the list.

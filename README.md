@@ -7,10 +7,10 @@ coverage gaps, and the MetaMask agent wallet (`mm`) for x402 payments on paid en
 
 ## Skills
 
-| Skill                                                                  | Description                                                                                                                                                                                                                                                                                                          |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dao-governance-research`](./skills/dao-governance-research/SKILL.md) | DAO governance research via the Degov Agent API v2: endpoint routing, paid-call consent, x402 payment ceremony, and answer formatting. Includes `references/` (endpoint cards, pricing, errors, x402, payment) and `workflows/` (discovery, activity, explain, security review, evidence, payment, troubleshooting). |
-| [`dao-governance-security`](./skills/dao-governance-security/SKILL.md) | Proposal security analysis: a rubric for malicious or risky actions, funds flow, permissions, proposer/process anomalies, execution risk, uncertainty, and recommended user actions.                                                                                                                                 |
+| Skill                                                                  | Description                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`dao-governance-research`](./skills/dao-governance-research/SKILL.md) | DAO governance research using the Degov Agent API for covered structured data and official web sources for verification, context, and coverage gaps. Payment authorization and signing are delegated to the configured wallet capability. |
+| [`dao-governance-security`](./skills/dao-governance-security/SKILL.md) | Proposal security analysis: a rubric for malicious or risky actions, funds flow, permissions, proposer/process anomalies, execution risk, uncertainty, and recommended user actions.                                                      |
 
 ## Installation
 

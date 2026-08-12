@@ -72,14 +72,10 @@ Evidence sources to prefer:
   simulation traces.
 - DAO treasury dashboards and official multisig/governor addresses.
 - Prior proposals by the same proposer or affecting the same contracts.
-- Degov Agent API via the `dao-governance-research` skill when recent proposal discovery or context
-  is needed. Use its
-  [proposal-security.md](../dao-governance-research/workflows/proposal-security.md) for the
-  data-fetch call chain (resolve → proposal detail → vote summary → evidence).
-- The v2 proposal evidence bundle (`GET /v2/proposals/:proposalKey/evidence` via the
-  `dao-governance-research` skill, plus tier): provenance, source references, intelligence quality
-  flags, and limitations — useful for evidence-first checks and for classifying uncertainty (see the
-  severity `Unknown` definition).
+- The `dao-governance-research` skill when structured proposal details, vote context, provenance,
+  source references, or evidence-quality signals would improve the analysis. Keep API routing,
+  pricing, and payment behavior inside that skill rather than coupling this security rubric to a
+  specific resource or tier.
 
 Never ask the user to paste private keys, seed phrases, admin credentials, or non-public secrets.
 

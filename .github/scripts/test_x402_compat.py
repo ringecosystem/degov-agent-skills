@@ -10,8 +10,8 @@ ceremony for HTTP 402 / x402 resources. That script rejects offers that:
 - omit the EIP-712 domain `name`/`version` in `extra`,
 - use `assetTransferMethod: "permit2"` (only EIP-3009 is supported).
 
-The Degov Agent API (v2) composes with that script instead of vendoring its own
-payment code, so this test pins the *server-side* offer contract: if the API ever
+The Degov Agent API composes with that script instead of vendoring its own payment
+code, so this test pins the *server-side* offer contract: if the API ever
 changes its 402 challenge such that the MetaMask script can no longer pay it, CI
 fails here instead of at a user's wallet.
 

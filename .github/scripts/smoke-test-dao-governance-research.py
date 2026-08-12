@@ -6,10 +6,10 @@ CI and local environments without installing anything. By default it runs local
 deterministic checks; live free-API and paid-402 (zero-cost) checks are explicit
 opt-ins.
 
-The skill no longer ships a CLI or local wallet: it documents the Degov Agent API
-v2 surface and composes with the MetaMask agent-wallet skill for x402 payments.
-The offline checks therefore validate the skill document contract (frontmatter,
-references, workflows, no stale TypeScript project) and the x402 offer
+The skill no longer ships a CLI or local wallet: it documents the current Degov
+Agent API contract and delegates x402 authorization and signing to the MetaMask
+agent-wallet skill. The offline checks validate the compact skill document
+contract, the absence of stale workflow/TypeScript structure, and the x402 offer
 compatibility fixture (test_x402_compat).
 """
 
@@ -27,12 +27,12 @@ from typing import NoReturn
 USAGE = """Usage: python3 .github/scripts/smoke-test-dao-governance-research.py [--offline] [--free-api] [--paid]
 
 Default/--offline:
-  Run deterministic local checks only: skill frontmatter, references/workflows
-  presence, no stale TypeScript project, security-skill validator, x402
+  Run deterministic local checks only: skill frontmatter and references,
+  no stale workflow or TypeScript project, security-skill validator, x402
   compatibility fixture test, and py_compile of every test script.
 
 --free-api:
-  Also call free API endpoints: health, v2 meta/data-status, v2 daos, v2 daos/:daoId.
+  Also call free API endpoints: health, data status, pricing, DAO list, and DAO detail.
   Uses DEGOV_AGENT_API_BASE_URL when set, otherwise https://agent-api.degov.ai.
 
 --paid:
@@ -53,19 +53,7 @@ OUTPUT_DIR = Path(os.environ.get("TMPDIR", "/tmp")) / "degov-agent-skills-smoke"
 API_BASE_URL = os.environ.get("DEGOV_AGENT_API_BASE_URL", "https://agent-api.degov.ai")
 
 REQUIRED_REFERENCES = [
-    "api-v2.md",
-    "pricing.md",
-    "errors.md",
-    "x402.md",
-    "payment.md",
-]
-REQUIRED_WORKFLOWS = [
-    "discovery.md",
-    "recent-activity.md",
-    "explain-proposal.md",
-    "proposal-security.md",
-    "evidence.md",
-    "payment-setup.md",
+    "api.md",
     "troubleshooting.md",
 ]
 
@@ -124,10 +112,18 @@ def validate_research_skill() -> None:
     if not body.strip():
         fail(f"{RESEARCH_SKILL_PATH}: missing body")
 
-    # Contract wording regressions caught during production calibration: v1 is
-    # frozen but still reachable, and public keys must look opaque in examples.
-    if "v1 (frozen, removed)" in content or "v2 API is the only supported surface" in content:
-        fail(f"{RESEARCH_SKILL_PATH}: must not describe the reachable v1 API as removed")
+    # Keep payment authorization in the wallet capability and keep API migration
+    # history out of the user-facing skill contract.
+    forbidden_skill_phrases = (
+        "paid-call consent",
+        "query plan",
+        "approved plan",
+        "production v1",
+        "v1 → v2",
+    )
+    for phrase in forbidden_skill_phrases:
+        if phrase.lower() in content.lower():
+            fail(f"{RESEARCH_SKILL_PATH}: stale workflow or migration wording {phrase!r}")
 
     skill_text = content
     for reference in REQUIRED_REFERENCES:
@@ -137,11 +133,11 @@ def validate_research_skill() -> None:
         if reference not in skill_text:
             fail(f"{RESEARCH_SKILL_PATH}: does not reference {reference}")
 
-    api_reference = (REFERENCES_DIR / "api-v2.md").read_text(encoding="utf-8")
-    if "v1 (frozen, removed)" in api_reference or "v2 API is the only supported surface" in api_reference:
-        fail(f"{REFERENCES_DIR / 'api-v2.md'}: must describe v1 as frozen legacy, not removed")
+    api_reference = (REFERENCES_DIR / "api.md").read_text(encoding="utf-8")
+    if "v1" in api_reference.lower() or "v1 → v2" in api_reference.lower():
+        fail(f"{REFERENCES_DIR / 'api.md'}: migration history does not belong in the current API contract")
     if "v2:ens-dao:snapshot:" in api_reference or "v2:uniswap:forum:" in api_reference:
-        fail(f"{REFERENCES_DIR / 'api-v2.md'}: key examples must remain opaque")
+        fail(f"{REFERENCES_DIR / 'api.md'}: key examples must remain opaque")
     wire_shape_regressions = (
         '"eventTimeMs": 1723046400000',
         '"votes": 1234',
@@ -156,19 +152,13 @@ def validate_research_skill() -> None:
     )
     for stale_shape in wire_shape_regressions:
         if stale_shape in api_reference:
-            fail(f"{REFERENCES_DIR / 'api-v2.md'}: stale v2 wire-shape example {stale_shape}")
+            fail(f"{REFERENCES_DIR / 'api.md'}: stale wire-shape example {stale_shape}")
     if '"coverageStatus": "ready",\n    "readiness": "ready"' in api_reference:
-        fail(f"{REFERENCES_DIR / 'api-v2.md'}: stale vote-summary coverage/readiness example")
+        fail(f"{REFERENCES_DIR / 'api.md'}: stale vote-summary coverage/readiness example")
 
-    pricing_reference = (REFERENCES_DIR / "pricing.md").read_text(encoding="utf-8")
-    if "check the wallet balance first" in pricing_reference:
-        fail(f"{REFERENCES_DIR / 'pricing.md'}: wallet checks must follow paid-path selection")
-    for workflow in REQUIRED_WORKFLOWS:
-        path = WORKFLOWS_DIR / workflow
-        if not path.is_file() or path.stat().st_size == 0:
-            fail(f"{path}: required workflow is missing or empty")
-        if workflow not in skill_text:
-            fail(f"{RESEARCH_SKILL_PATH}: does not reference {workflow}")
+    stale_workflows = sorted(WORKFLOWS_DIR.glob("*.md")) if WORKFLOWS_DIR.exists() else []
+    if stale_workflows:
+        fail(f"redundant workflow files must be removed: {[str(p.relative_to(ROOT)) for p in stale_workflows]}")
 
     # The TypeScript CLI project must be gone: no package.json, no .ts files.
     if (SKILL_SCRIPTS_DIR / "package.json").exists():
@@ -265,18 +255,18 @@ def run_paid_offer_checks() -> None:
     assert_offer_compatible(offer)
     print("live 402 offer is payable by the MetaMask x402_pay.py requirements (zero cost)", flush=True)
 
-    # Key-param routes must reach the payment gate (402), not 414. v2 proposalKey
+    # Key-param routes must reach the payment gate (402), not 414. proposalKey
     # values are ~190 chars; an old deployment with the default Fastify
     # maxParamLength (100) rejects them with 414 before payment is even offered.
     # A fake ~190-char key is enough to exercise the route: unpaid it must 402
     # (route matched, payment gate reached) and never settle anything.
-    fake_key = "v2:test-dao:snapshot:" + "a" * 170
+    fake_key = "p1_" + "a" * 187
     url = f"{API_BASE_URL}/v2/proposals/{fake_key}"
     status, payload, headers = http_get_json(url)
     if status == 414:
         fail(
             f"key-param route still 414 (maxParamLength fix missing): {url}\n"
-            "degov-agent-api raised maxParamLength so ~190-char v2 keys stay routable; "
+            "degov-agent-api raised maxParamLength so ~190-char keys stay routable; "
             "deploy that fix (PR #292) before running this check."
         )
     if status != 402:

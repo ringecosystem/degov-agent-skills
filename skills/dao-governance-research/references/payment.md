@@ -13,8 +13,9 @@ npm install -g @metamask/agent-wallet
 npx skills add metaMask/agent-skills
 ```
 
-Check the version: `mm --version` should report `@metamask/agent-wallet/<version>`; this skill is
-pinned to `mmCliVersion` in its frontmatter (warn the user once on mismatch).
+Check the installed version with `mm --version` when troubleshooting compatibility. The MetaMask
+agent-wallet skill is the source of truth for its supported CLI version; do not duplicate a hard pin
+here.
 
 ## Account setup
 
@@ -47,8 +48,7 @@ environment variables instead (see the MetaMask skill's credential rules).
 
 ## Per-call cost control
 
-- Check `/v2/meta/pricing` (free) before spending; every paid call costs $0.005 (standard) or $0.01
-  (plus) unless pricing changes.
+- Check `/v2/meta/pricing` (free) before spending; do not rely on prices copied into documentation.
 - A `402` response costs nothing — only settling pays.
 
 ## Troubleshooting quick map

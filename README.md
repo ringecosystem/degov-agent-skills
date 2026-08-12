@@ -2,8 +2,8 @@
 
 Reusable agent skills for DAO governance research and proposal security analysis. These skills
 enable AI agents to answer DAO governance questions with evidence instead of guesses — using the
-Degov Agent API as the primary data source, web search as a follow-up, and the MetaMask agent wallet
-(`mm`) for x402 payments on paid endpoints.
+Degov Agent API for covered structured data, official web sources for primary-source context and
+coverage gaps, and the MetaMask agent wallet (`mm`) for x402 payments on paid endpoints.
 
 ## Skills
 

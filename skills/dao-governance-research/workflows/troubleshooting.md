@@ -30,11 +30,11 @@ Decision tree for failed API calls and payment problems.
 
 ## Environment failures
 
-| Symptom                      | Cause                   | Fix                                                                                              |
-| ---------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
-| Base URL unreachable         | Wrong endpoint          | Production: `https://agent-api.degov.ai`; staging: local override (e.g. `http://127.0.0.1:8310`) |
-| MetaMask skill not installed | Missing prerequisite    | `npx skills add metaMask/agent-skills`, or use web-only mode                                     |
-| `mmCliVersion` mismatch      | CLI upgraded/downgraded | Warn the user; `npm install -g @metamask/agent-wallet@<pinned>` if alignment is wanted           |
+| Symptom                      | Cause                 | Fix                                                                                              |
+| ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| Base URL unreachable         | Wrong endpoint        | Production: `https://agent-api.degov.ai`; staging: local override (e.g. `http://127.0.0.1:8310`) |
+| MetaMask skill not installed | Missing prerequisite  | `npx skills add metaMask/agent-skills`, or use web-only mode                                     |
+| MetaMask CLI/skill mismatch  | CLI or skill is stale | Update them together and follow the MetaMask skill's current compatibility guidance              |
 
 ## Escalation
 

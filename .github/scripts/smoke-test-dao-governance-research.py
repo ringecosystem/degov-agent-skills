@@ -157,8 +157,12 @@ def run_local_checks() -> None:
 
 def http_get_json(url: str) -> tuple[int, dict | None, dict[str, str]]:
     """GET a URL and return (status, json, headers)."""
+    # Production may reject urllib's default Python-urllib user agent. Use an
+    # explicit, stable identifier so the live smoke exercises the public API in
+    # the same way as curl and normal HTTP clients.
+    request = urllib.request.Request(url, headers={"User-Agent": "degov-agent-skills-smoke/1.0"})
     try:
-        with urllib.request.urlopen(url, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=20) as response:
             status = response.status
             headers = dict(response.headers.items())
             body = response.read().decode("utf-8")

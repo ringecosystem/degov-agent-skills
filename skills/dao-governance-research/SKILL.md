@@ -1,13 +1,12 @@
 ---
 name: dao-governance-research
 description:
-  Load this skill when users ask about Web3 DAO governance. Use the Degov Agent API (v2) as the
-  primary source for DAO governance facts and recent activity, then use web search as a secondary
-  layer when API coverage is missing, stale, or insufficient. Paid endpoints are settled with x402
-  payments signed by the MetaMask agent wallet (mm).
+  Load this skill when users ask about Web3 DAO governance. Route covered, structured governance
+  research to the Degov Agent API (v2), and use official web sources for conceptual questions,
+  primary-source verification, or gaps in API coverage. Paid endpoints use x402 payments signed by
+  the MetaMask agent wallet (mm).
 metadata:
   version: 1.0.0
-  mmCliVersion: '6.0.0'
 ---
 
 # DAO Governance Research Skill
@@ -16,9 +15,10 @@ metadata:
 
 Use this skill when the user is asking about Web3 DAO governance and the answer depends on accurate,
 recent governance information. The main goal is to avoid hallucinating DAO activity, proposal
-details, or governance timelines. In most cases, the best approach is to use the Degov Agent API
-(v2) as the primary data source, and then use web search only as a follow-up layer when the API
-results are missing, stale, too shallow, or need source verification.
+details, or governance timelines. Use the Degov Agent API (v2) for covered, structured governance
+data. Use official web sources when the question is conceptual, the API does not cover it, or
+primary-source verification is more useful. The goal is reliable evidence, not forcing every
+governance question through the API.
 
 Invoke this skill for questions such as:
 
@@ -51,20 +51,17 @@ Default API endpoint: `https://agent-api.degov.ai`. For development against an a
 use any base URL override the agent environment supports (for example
 `DEGOV_AGENT_API_BASE_URL=http://127.0.0.1:8310` for a local staging instance).
 
-## Preflight
+## Preflight (when relevant)
 
-Before the first API call in a session:
+Do not run a fixed preflight for every question. Check only what the selected path needs:
 
-1. **API health** — `GET /health` returns `{"ok":true,...}`; `GET /v2/meta/data-status` shows global
-   counts, `coverageStatus`, and `dataAsOf`. Treat data as stale-able and check `coverageStatus`
-   (`ready` vs `backfilling`/`stale`) when recency matters.
-2. **Paid-path readiness** (only when a paid call is likely) — run `mm doctor` and require both
-   `authenticated: true` and `initialized: true`; confirm Base is supported with
+1. **Coverage/freshness** — use `GET /v2/meta/data-status` when recency or completeness matters.
+   Treat `backfilling`/`stale` as a limitation to disclose, not an automatic failure. Use
+   `GET /health` only to diagnose connectivity or service errors.
+2. **Paid-path readiness** — after the user chooses a paid API path, run `mm doctor` and require
+   both `authenticated: true` and `initialized: true`; confirm Base is supported with
    `mm chains list --json` (look for chain id `8453`). If `mm doctor` fails, follow the MetaMask
    skill's login/onboarding workflows, or fall back to web-only.
-3. **Version alignment** (once per session, best-effort) — compare `mm --version`
-   (`@metamask/agent-wallet/<version>`) against the `mmCliVersion` pinned in this skill's
-   frontmatter; warn the user once on mismatch and continue.
 
 ## Endpoint routing
 
@@ -101,13 +98,11 @@ workflow when the request is a pattern rather than a single endpoint.
 
 ## Paid-call consent flow
 
-Before any paid endpoint is used, ask the user whether they want to use the Degov Agent API paid
-path. Present it as a short two-option choice:
+Before entering a paid API workflow, ask whether the user wants that path. Keep the choice short and
+include the estimated total cost from `/v2/meta/pricing` when the query plan is known:
 
-> Your question is about DAO governance, so I can answer it more accurately with the Degov Agent
-> API. Paid research endpoints use a small x402 fee in USDC on Base, signed by your MetaMask agent
-> wallet. The exact budget guidance should come from `/v2/meta/pricing` (or
-> `mm wallet balance --chain-ids 8453`), not from hardcoded estimates.
+> This request needs paid DeGov API data. It uses x402 fees in USDC on Base, signed by your MetaMask
+> agent wallet. The planned calls are estimated to cost <amount from `/v2/meta/pricing`>.
 >
 > Choose one:
 >
@@ -120,6 +115,8 @@ path. Present it as a short two-option choice:
   instead of the Degov Agent API.
 - If the user has already agreed earlier in the conversation and the wallet is ready, do not repeat
   the full explanation for every follow-up question.
+- New calls beyond the agreed query plan require a new cost estimate and consent; calls already
+  covered by the agreed plan do not require repeating the two-option prompt.
 - Do not repeatedly push wallet setup after the user declines.
 
 ## Payment ceremony (x402 via MetaMask agent wallet)
@@ -134,23 +131,25 @@ To pay, compose with the MetaMask agent-wallet skill (its [x402.md](references/x
 
 1. Load the metamask-agent-wallet skill and locate its `x402_pay.py` script.
 2. `python3 <skill-dir>/scripts/x402_pay.py inspect <paid-url>` — prints the payment requirement(s)
-   as JSON (asset, amount, network, `payTo`, resource). **Show this to the user.**
-3. After the user approves, run `python3 <skill-dir>/scripts/x402_pay.py pay <paid-url> --confirm` —
-   signs an EIP-3009 authorization with `mm wallet sign-typed-data`, retries with the
-   `PAYMENT-SIGNATURE` header, and prints the settlement (transaction hash) plus the resource body.
+   as JSON (asset, amount, network, `payTo`, resource). Verify it matches the approved plan. Show it
+   to the user when it differs from the estimate or when the user asks to inspect it.
+3. After the paid path and cost are approved, run
+   `python3 <skill-dir>/scripts/x402_pay.py pay <paid-url> --confirm` — signs an EIP-3009
+   authorization with `mm wallet sign-typed-data`, retries with the `PAYMENT-SIGNATURE` header, and
+   prints the settlement (transaction hash) plus the resource body.
 4. Verify the settlement appears in the response headers (`PAYMENT-RESPONSE`) and the data is
    usable; report the tx hash with a Base explorer link when relevant.
 
-Rules: one payment attempt per resource, never auto-retry a payment, never auto-pay without user
-confirmation, and do not re-pay a resource that already settled. If `x402_pay.py` is unavailable or
-the MetaMask skill is not installed, do not improvise a payment — use web-only mode or ask the user
-to install the MetaMask skill first.
+Rules: one payment attempt per resource, never auto-retry a payment, never pay outside the user's
+approved query plan and cost, and do not re-pay a resource that already settled. If `x402_pay.py` is
+unavailable or the MetaMask skill is not installed, do not improvise a payment — use web-only mode
+or ask the user to install the MetaMask skill first.
 
 ## Standard workflow for answering questions
 
 ### Query planning for vague questions
 
-Users often ask broad or fuzzy questions. Do not answer too early. First decide:
+For broad or fuzzy questions, first decide:
 
 - which DAO or DAO family the user is probably asking about (use `GET /v2/daos` when a short name is
   ambiguous; some production DAO ids include suffixes, for example ENS is `ens-dao`, not `ens`);
@@ -185,10 +184,10 @@ Use the API intentionally:
   `priorityMin`/`surface` filters; use for "biggest stories" and watch-style questions.
 - `proposals/resolve`: only when you have a URL/title/external id and no key yet; returns
   deterministic `match.type` + `matchedFields`, not a confidence score.
-- `proposals/:proposalKey`, `.../votes/summary`, `.../votes`: drill into one proposal. Always obtain
-  the key from a list/resolve/event/signal result — never construct or parse it.
-- `proposals/:proposalKey/evidence`: only for citation/audit-style answers (provenance, references,
-  quality flags). Ordinary proposal explanations should not spend the extra plus-tier call.
+- `proposals/:proposalKey`, `.../votes/summary`, `.../votes`: drill into one proposal. Obtain the
+  key from a list/resolve/event/signal result — never construct or parse it.
+- `proposals/:proposalKey/evidence`: for citation/audit/security answers that need provenance,
+  references, or quality flags. Skip it when proposal detail and primary sources are sufficient.
 - `forum-topics`: forum discussion scanning; `governanceRelated=true` narrows to governance-relevant
   threads.
 - `timeline`, `voters`: trend and voter analysis.
@@ -223,24 +222,20 @@ say the answer may be less accurate or complete.
 ## Answer style and formatting
 
 The API is a data source, not the final user experience. Do not give users raw JSON unless they
-explicitly ask for it. Turn governance data into a clear explanation that a newcomer can follow:
+explicitly ask for it. Match the user's requested depth and format. By default:
 
 - use simple words; explain DAO and governance ideas in plain language;
-- be detailed enough to be useful — one-line answers are not acceptable; explain what happened, why
-  it matters, and which DAO it affects;
+- answer directly, adding what happened and why it matters when that context helps;
 - include the timeframe when relevant; use exact dates when timing is important.
 
-For most answers, use this shape:
+For research summaries, a useful default shape is:
 
 1. A plain-language paragraph that gives the main answer immediately.
 2. A few concise bullets for the most important proposals, actions, or takeaways.
 3. The most relevant source links at the end.
 
-Formatting rules: use markdown; keep the answer easy to scan; do not turn the whole answer into a
-long wall of bullets; do not include raw API payloads or unexplained abbreviations; if you use both
-Degov Agent API data and web follow-up, say so clearly; cite official forums, Snapshot pages,
-governance portals, Tally pages, and official announcements; do not make up facts or details that
-are not supported by the API or source material.
+Keep the answer easy to scan. Cite the most relevant source links and distinguish API-derived facts
+from primary-source interpretation when that distinction matters. Do not invent unsupported facts.
 
 ## Answer checklist
 
@@ -249,23 +244,23 @@ are not supported by the API or source material.
    gather enough results before answering?
 3. Did I follow `nextCursor` when pagination was needed, and handle a stale cursor correctly?
 4. Did I use linked source materials or web follow-up when the API alone was too thin?
-5. Did I explain the answer in simple language instead of copying raw API output?
-6. Is the answer detailed enough to be useful, not just one line?
-7. Did I avoid too many bullets and keep the structure easy to scan?
-8. Did I clearly say whether the answer came from the Degov Agent API, the web, or both?
-9. If a paid endpoint was needed, did I ask the user whether they wanted to use the Degov Agent API
+5. Did I answer in the depth and format the user requested instead of copying raw API output?
+6. Are the important claims supported by relevant links or clearly identified API data?
+7. If a paid endpoint was needed, did I ask the user whether they wanted to use the Degov Agent API
    service before making paid calls?
-10. Did I confirm the payment requirement (asset, amount, network, payTo, resource) with the user
-    before paying, and avoid double-paying a settled resource?
+8. Did the actual payment requirement stay within the approved query plan and estimated cost, and
+   did I avoid double-paying a settled resource?
 
 ## Guardrails
 
 - Do not ask users to paste private keys, seed phrases, or credentials. Keys and signing live in the
   MetaMask agent wallet.
-- Before any paid API call, ask the user whether they want to use the Degov Agent API service and
-  recommend it as the more accurate option; offer the simple `1` or `2` choice.
-- Every x402 payment requires user confirmation of asset, amount, network, `payTo`, and resource URL
-  before signing. One payment attempt per resource; never auto-retry or auto-pay.
+- Before entering a paid workflow, present the planned calls and estimated total cost, then offer
+  the simple API-or-web choice. Do not claim the paid path is inherently more accurate for every
+  question.
+- Pay only calls covered by the approved plan and cost. If the inspected offer differs, show the
+  asset, amount, network, `payTo`, and resource URL and get approval again. One payment attempt per
+  resource; never auto-retry or double-pay.
 - If the user declines the paid API path, proceed with web search instead of repeatedly asking.
 - Turn API data into a user-friendly explanation instead of pasting raw responses; state when
   information came from the Degov Agent API versus the web.

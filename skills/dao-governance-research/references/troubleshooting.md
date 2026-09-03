@@ -35,7 +35,6 @@ Most API errors use this envelope:
 | `402 Payment Required`        | The public resource requires payment                        | Delegate the full challenge to the wallet capability            |
 | `404 NOT_FOUND`               | The requested public DAO, proposal, or voter was not found  | Reacquire the public id from a list or exact resolver           |
 | `404 DATA_NOT_AVAILABLE`      | The resource exists but that normalized data is unavailable | Use another public resource or the official source; disclose it |
-| `409 CURSOR_EXPIRED`          | Published data changed since the cursor was issued          | Restart pagination only when another page still matters         |
 | `429 RATE_LIMITED`            | Too many requests                                           | Respect `Retry-After`; avoid blind paid retries                 |
 | `500 INTERNAL_ERROR`          | Unexpected service failure                                  | Preserve `requestId`; retry later or use an official source     |
 | `503 TEMPORARILY_UNAVAILABLE` | The public serving view cannot currently answer             | Use an official source and disclose the API outage              |
@@ -59,32 +58,34 @@ sources where possible and say that structured Degov API data was not used.
   successful family endpoint conflict should be disclosed rather than silently choosing one.
 - `DATA_NOT_AVAILABLE` from vote summary does not mean "zero votes". Vote rows may still exist for a
   ballot mechanism that cannot currently be normalized.
-- Zero totals from a successful vote summary are evidence of zero published votes, but the API does
-  not expose a data-as-of timestamp. Use the official proposal page if currentness matters.
+- Zero totals from a successful vote summary are evidence of zero published votes as of that
+  response's `dataAsOf`. Use the official proposal page if currentness still matters.
 - A null forum `excerpt` means the API cannot summarize the discussion. Open `source.url` rather
   than guessing from the title.
 
 ## Vote interpretation
 
 - Preserve `votingPower` and `knownVotingPower` as decimal strings.
-- `rawChoice` can be a scalar, array, or object. Map only a simple scalar through proposal
-  `choices[].id`.
-- If `choices` is null or the raw ballot is complex, state that the selection cannot be interpreted
-  from the public API alone. Do not assume that numeric values always mean For/Against/Abstain.
-- The API does not currently expose vote transaction hashes; use the proposal's official source for
-  transaction-level verification.
+- Prefer `choiceId` and `choiceLabel` when they are non-null. `rawChoice` can still be a scalar,
+  array, or object and remains the provider-shaped evidence.
+- If normalized choice fields are null, state that the selection cannot be interpreted from the
+  public API alone. Do not assume that numeric values always mean For/Against/Abstain; DeGov Square
+  is the documented exception with `0` Against, `1` For, and `2` Abstain.
+- `transactionHash` is source-reported and can be null, especially for off-chain votes. Verify it on
+  the relevant explorer before making a transaction-level claim.
 
 ## Pagination
 
 - Use `nextCursor` only when `hasMore` is true.
-- Pass the cursor back unchanged to the same route, filters, sort, and limit.
+- Pass the cursor back unchanged to the same route, filters, and sort.
 - Do not reuse, decode, edit, shorten, or synthesize a cursor.
-- On `CURSOR_EXPIRED`, discard prior pages only if a consistent full traversal is required;
-  otherwise keep the evidence already used and explain the limited window.
+- Cursors do not expire merely because unrelated governance data was published. Pagination is live,
+  so restart when a point-in-time full traversal is required while records are changing.
 
 ## Currentness
 
 Public V2 intentionally omits pipeline health, serving revisions, coverage labels, and operational
-status. It also currently omits a consumer-facing data-as-of timestamp. A successful request is not
-proof that source ingestion is current. For "now", "latest", deadlines, execution, or other
-time-sensitive claims, verify the relevant `source.url` and state the evidence time in the answer.
+status. `dataAsOf` on DAO, proposal, forum-topic, and vote-summary records is source-observation
+provenance, not proof that all ingestion is current. For "now", "latest", deadlines, execution, or
+other time-sensitive claims, verify the relevant `source.url` and state the evidence time in the
+answer.

@@ -27,15 +27,15 @@ Default API base URL: `https://agent-api.degov.ai`.
 
 1. Identify the DAO, governance system, requested time range, and whether the user wants discovery,
    recent activity, a specific proposal, forum discussion, voter analysis, or security context.
-2. Use the free DAO directory and DAO detail endpoints first when they can resolve the DAO or show
-   which public resource families are available.
+2. Use the free DAO directory search and DAO detail endpoints first when they can resolve the DAO or
+   show which public resource families are available.
 3. Select the smallest set of API resources that can answer the question. Use
    [api.md](references/api.md) for current paths, parameters, response shapes, and limits.
 4. Follow pagination only while additional results materially improve the answer. Treat keys and
    cursors as opaque values returned by the API; never construct or parse them.
-5. Open relevant source URLs from API results when primary text, outcome, quorum, execution details,
-   or currentness needs confirmation. The public V2 response does not expose pipeline health or a
-   data-freshness timestamp.
+5. Use normalized `outcome`, quorum, choice, and provenance fields when present. Open relevant
+   source URLs when primary text, executable actions, execution state, or currentness needs
+   confirmation. Public V2 does not expose pipeline health.
 6. If API data is unavailable or insufficient, continue with official web sources and state what
    evidence was not available.
 7. Turn the evidence into a direct answer rather than returning raw JSON.
@@ -44,7 +44,7 @@ Default API base URL: `https://agent-api.degov.ai`.
 
 | User intent                                       | API capability                                  |
 | ------------------------------------------------- | ----------------------------------------------- |
-| Discover covered DAOs or resolve a DAO            | DAO directory and DAO detail                    |
+| Discover covered DAOs or resolve a DAO            | DAO directory search and DAO detail             |
 | Check available public data families              | DAO detail `availableData`                      |
 | Review recent proposals                           | Proposal list filtered by DAO, status, and time |
 | Resolve a proposal from an exact URL or source ID | Proposal resolution followed by proposal detail |
@@ -52,12 +52,13 @@ Default API base URL: `https://agent-api.degov.ai`.
 | Analyze known turnout or vote concentration       | Vote summary and vote rows                      |
 | Inspect recent governance forum discussion        | Forum topic list                                |
 | Rank DAO participants or review voter behavior    | DAO participant and voter resources             |
-| Confirm outcome, quorum, execution, or freshness  | Official source linked by the API               |
+| Check outcome, quorum, or normalized vote choices | Proposal detail, vote summary, and vote rows    |
+| Confirm executable actions or execution state     | Official source linked by the API               |
 
 For a broad request, begin with a DAO, proposal, or forum list and drill into only the most relevant
 items. For a specific proposal, resolve an exact supplied URL or source identity when necessary,
 fetch the detail, and add vote resources only when they affect the answer. The resolver does not
-accept titles; use a narrowed proposal list or official search when the user supplies only a title.
+accept titles; use proposal title search, narrowed by DAO or time when possible.
 
 ## Payments
 
@@ -78,12 +79,14 @@ Current payment metadata is published on each paid operation in `/openapi.json` 
 - Prefer primary sources for proposal intent, executable actions, deadlines, and official process.
 - Distinguish confirmed facts from interpretation and missing information.
 - Preserve exact dates and time zones when timing affects the answer.
-- Do not describe API results as complete, fresh, or current solely because the request succeeded;
-  verify time-sensitive claims against an official source.
+- `dataAsOf` is the latest source observation included in that published governance record. Use it
+  as provenance, not as proof that every source or related resource is current.
+- Do not describe API results as complete or current solely because the request succeeded; verify
+  time-sensitive claims against an official source.
 - `availableData` describes public resource availability, not freshness. If it conflicts with a
   successful endpoint response, disclose the ambiguity instead of guessing.
-- `rawChoice` is provider-shaped JSON. Map simple scalar choice ids through proposal `choices`, but
-  do not invent semantics for arrays or objects when the proposal does not describe its vote type.
+- Prefer a vote's `choiceId` and `choiceLabel`. When they are null, preserve `rawChoice` as
+  provider-shaped evidence and do not invent semantics for arrays, objects, or unknown values.
 - Do not infer proposal contents, outcomes, vote totals, or dates from titles alone.
 - For proposal security questions, gather the available proposal, vote, provenance, and source
   context, then apply the `dao-governance-security` skill.

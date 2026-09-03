@@ -152,6 +152,7 @@ def validate_research_skill() -> None:
         "voterIdentity",
         '"readiness":',
         '"coverageStatus":',
+        "CURSOR_EXPIRED",
     )
     combined_research_docs = content + "\n" + api_reference + "\n" + (
         REFERENCES_DIR / "troubleshooting.md"
@@ -171,6 +172,12 @@ def validate_research_skill() -> None:
         "voterId",
         "rawChoice",
         "knownVotingPower",
+        "dataAsOf",
+        "outcome",
+        "quorumRequired",
+        "choiceId",
+        "choiceLabel",
+        "transactionHash",
     )
     for required_term in required_contract_terms:
         if required_term not in api_reference:
@@ -243,6 +250,18 @@ def run_free_api_checks() -> None:
     if actual_paths != expected_paths:
         fail(f"unexpected public OpenAPI route set: expected={sorted(expected_paths)} actual={sorted(actual_paths)}")
 
+    expected_query_parameters = {
+        "/v2/daos": "query",
+        "/v2/proposals": "query",
+        "/v2/forum-topics": "query",
+    }
+    for path, parameter_name in expected_query_parameters.items():
+        operation = (payload or {}).get("paths", {}).get(path, {}).get("get", {})
+        parameters = operation.get("parameters", [])
+        names = {parameter.get("name") for parameter in parameters if isinstance(parameter, dict)}
+        if parameter_name not in names:
+            fail(f"{path}: OpenAPI is missing query parameter {parameter_name!r}")
+
     status, payload, _ = http_get_json(f"{API_BASE_URL}/v2/daos?limit=5")
     if status != 200:
         fail(f"/v2/daos failed: status={status} payload={payload}")
@@ -250,6 +269,8 @@ def run_free_api_checks() -> None:
     page = (payload or {}).get("page")
     if not isinstance(items, list) or not items or not isinstance(page, dict):
         fail(f"/v2/daos: expected data array and page object, got {payload}")
+    if "dataAsOf" not in items[0]:
+        fail(f"/v2/daos: item missing dataAsOf provenance: {items[0]}")
     dao_id = items[0].get("daoId")
     if not dao_id:
         fail(f"/v2/daos: item missing daoId: {items[0]}")

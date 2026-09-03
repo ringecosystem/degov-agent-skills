@@ -27,34 +27,37 @@ Default API base URL: `https://agent-api.degov.ai`.
 
 1. Identify the DAO, governance system, requested time range, and whether the user wants discovery,
    recent activity, a specific proposal, forum discussion, voter analysis, or security context.
-2. Use free discovery endpoints first when they can resolve the DAO or establish coverage.
+2. Use the free DAO directory and DAO detail endpoints first when they can resolve the DAO or show
+   which public resource families are available.
 3. Select the smallest set of API resources that can answer the question. Use
    [api.md](references/api.md) for current paths, parameters, response shapes, and limits.
 4. Follow pagination only while additional results materially improve the answer. Treat keys and
    cursors as opaque values returned by the API; never construct or parse them.
-5. Open relevant source URLs from API results when primary text, execution details, or timing needs
-   confirmation.
+5. Open relevant source URLs from API results when primary text, outcome, quorum, execution details,
+   or currentness needs confirmation. The public V2 response does not expose pipeline health or a
+   data-freshness timestamp.
 6. If API data is unavailable or insufficient, continue with official web sources and state what
    evidence was not available.
 7. Turn the evidence into a direct answer rather than returning raw JSON.
 
 ## Capability routing
 
-| User intent                                            | API capability                                  |
-| ------------------------------------------------------ | ----------------------------------------------- |
-| Check coverage or freshness                            | Data status                                     |
-| Discover covered DAOs or resolve an ambiguous DAO name | DAO directory and DAO detail                    |
-| Review recent proposals                                | Proposal list filtered by DAO, status, and time |
-| Find what happened during a specific period            | Governance events or curated signals            |
-| Explain a proposal from a URL, title, or external ID   | Proposal resolution followed by proposal detail |
-| Analyze turnout, quorum, or vote concentration         | Vote summary and vote rows                      |
-| Inspect recent governance forum discussion             | Forum topic list and detail                     |
-| Review long-term activity or voter behavior            | DAO timeline and voter resources                |
-| Collect provenance or evidence-quality signals         | Proposal evidence                               |
+| User intent                                       | API capability                                  |
+| ------------------------------------------------- | ----------------------------------------------- |
+| Discover covered DAOs or resolve a DAO            | DAO directory and DAO detail                    |
+| Check available public data families              | DAO detail `availableData`                      |
+| Review recent proposals                           | Proposal list filtered by DAO, status, and time |
+| Resolve a proposal from an exact URL or source ID | Proposal resolution followed by proposal detail |
+| Explain a proposal                                | Proposal detail                                 |
+| Analyze known turnout or vote concentration       | Vote summary and vote rows                      |
+| Inspect recent governance forum discussion        | Forum topic list                                |
+| Rank DAO participants or review voter behavior    | DAO participant and voter resources             |
+| Confirm outcome, quorum, execution, or freshness  | Official source linked by the API               |
 
-For a broad request, begin with a list, event, or signal resource and drill into only the most
-relevant items. For a specific proposal, resolve the supplied identifier when necessary, fetch the
-detail, and add vote or evidence resources only when they affect the answer.
+For a broad request, begin with a DAO, proposal, or forum list and drill into only the most relevant
+items. For a specific proposal, resolve an exact supplied URL or source identity when necessary,
+fetch the detail, and add vote resources only when they affect the answer. The resolver does not
+accept titles; use a narrowed proposal list or official search when the user supplies only a title.
 
 ## Payments
 
@@ -66,7 +69,8 @@ safety. Do not reproduce or override those policies in this skill.
 If the wallet capability is unavailable or the payment is not authorized, continue with official web
 sources where possible and disclose that structured Degov API data was not used.
 
-Live route pricing is available from the API pricing resource. Do not hardcode prices in this skill.
+Current payment metadata is published on each paid operation in `/openapi.json` and in the
+`PAYMENT-REQUIRED` challenge. Do not hardcode prices in this skill.
 
 ## Evidence rules
 
@@ -74,7 +78,12 @@ Live route pricing is available from the API pricing resource. Do not hardcode p
 - Prefer primary sources for proposal intent, executable actions, deadlines, and official process.
 - Distinguish confirmed facts from interpretation and missing information.
 - Preserve exact dates and time zones when timing affects the answer.
-- Treat `backfilling`, `stale`, or unavailable coverage as a limitation to disclose.
+- Do not describe API results as complete, fresh, or current solely because the request succeeded;
+  verify time-sensitive claims against an official source.
+- `availableData` describes public resource availability, not freshness. If it conflicts with a
+  successful endpoint response, disclose the ambiguity instead of guessing.
+- `rawChoice` is provider-shaped JSON. Map simple scalar choice ids through proposal `choices`, but
+  do not invent semantics for arrays or objects when the proposal does not describe its vote type.
 - Do not infer proposal contents, outcomes, vote totals, or dates from titles alone.
 - For proposal security questions, gather the available proposal, vote, provenance, and source
   context, then apply the `dao-governance-security` skill.
@@ -100,8 +109,8 @@ payment, connectivity, and response-shape failures.
 
 - The DAO and requested scope are correctly identified.
 - The selected resources are sufficient but not excessive.
-- Opaque keys and cursors came from API responses.
+- Opaque proposal ids and cursors came from API responses.
 - Important claims are supported by API evidence or relevant primary sources.
-- Missing, stale, or conflicting evidence is disclosed.
+- Missing, potentially stale, or conflicting evidence is disclosed.
 - Payment behavior, when needed, was delegated to the wallet capability.
 - The answer is useful prose rather than an API dump.

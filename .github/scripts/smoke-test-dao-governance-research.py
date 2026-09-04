@@ -107,8 +107,8 @@ def validate_research_skill() -> None:
         fail(f"{RESEARCH_SKILL_PATH}: expected name dao-governance-research, found {fields.get('name')!r}")
     if not fields.get("description"):
         fail(f"{RESEARCH_SKILL_PATH}: missing description")
-    if fields.get("version") != "1.0.0":
-        fail(f"{RESEARCH_SKILL_PATH}: expected version 1.0.0, found {fields.get('version')!r}")
+    if fields.get("version") != "1.0.1":
+        fail(f"{RESEARCH_SKILL_PATH}: expected version 1.0.1, found {fields.get('version')!r}")
     if not body.strip():
         fail(f"{RESEARCH_SKILL_PATH}: missing body")
 
@@ -174,6 +174,7 @@ def validate_research_skill() -> None:
         "knownVotingPower",
         "dataAsOf",
         "outcome",
+        "executionStatus",
         "quorumRequired",
         "choiceId",
         "choiceLabel",

@@ -222,6 +222,7 @@ Example item:
   },
   "status": "active",
   "outcome": "unknown",
+  "executionStatus": "unknown",
   "createdAt": "2026-09-01T09:58:40.000Z",
   "votingStartsAt": "2026-09-02T09:58:40.000Z",
   "votingEndsAt": "2026-09-05T09:58:40.000Z",
@@ -230,8 +231,11 @@ Example item:
 ```
 
 `proposerId`, `discussionUrl`, `status`, and the three governance timestamps can be `null`.
-`outcome` is `passed`, `failed`, `executed`, `canceled`, `no_quorum`, or `unknown`; an active
-proposal normally has `unknown`. Search matches titles only, not proposal bodies.
+`outcome` is the voting or governance-decision result: `passed`, `failed`, `canceled`, `no_quorum`,
+or `unknown`. `executionStatus` is separate and is `not_started`, `queued`, `executed`, `expired`,
+`not_applicable`, or `unknown`. A passed proposal is not necessarily executed; treat `unknown` as
+missing source evidence rather than guessing. An active proposal normally has `outcome: "unknown"`
+and `executionStatus: "unknown"`. Search matches titles only, not proposal bodies.
 
 ### `POST /v2/proposals/resolve`
 
@@ -283,8 +287,10 @@ Additional fields:
 
 `body`, `choices`, `quorumRequired`, and `sourceUpdatedAt` can be `null`. Choice ids are provider
 safe: Snapshot choices are normally one-based, while DeGov Square Governor choices use `0` Against,
-`1` For, and `2` Abstain. The contract does not expose executable actions or a separate
-authoritative execution-state object; use `source.url` for those claims.
+`1` For, and `2` Abstain. The shared `executionStatus` field exposes normalized lifecycle evidence
+when the provider supports it, but the contract does not expose executable calls, calldata,
+execution transactions, or a timelock ETA. Use `source.url` for those details and whenever
+`executionStatus` is `unknown`.
 
 ### `GET /v2/proposals/{proposalId}/vote-summary`
 
@@ -401,7 +407,7 @@ Example item:
     "url": "https://governance.aave.com/t/arfc-aave-v4-activation-on-ethereum-mainnet/24293"
   },
   "title": "[ARFC] Aave V4 Activation on Ethereum Mainnet",
-  "excerpt": null,
+  "excerpt": "This ARFC proposes activating Aave V4 on Ethereum mainnet after the required technical and risk reviews.",
   "author": "alice",
   "category": { "id": "4", "name": "Governance" },
   "tags": [],
@@ -414,9 +420,11 @@ Example item:
 }
 ```
 
-`excerpt`, `author`, `category`, and either governance timestamp can be `null`. There is no
-topic-detail endpoint. Search matches titles only. Open `source.url` when the user asks what the
-discussion actually says and the excerpt is insufficient.
+`excerpt`, `author`, `category`, and either governance timestamp can be `null`. The excerpt is
+either published by the forum or deterministically derived from the opening post; the author is the
+opening-post identity when available. There is no topic-detail endpoint. Search matches titles only.
+Open `source.url` when the user asks what the discussion actually says and the excerpt is
+insufficient.
 
 ### `GET /v2/voters/{voterId}`
 
@@ -484,9 +492,11 @@ Example item:
 - `dataAsOf` is per-record provenance, not a global freshness or pipeline-health guarantee.
 - DAO name/id and proposal/forum title substring search are available; body and full-text search are
   not.
-- Proposal outcome and quorum are exposed, but executable actions and a separate authoritative
-  execution-state object are not.
-- Forum topic detail is not exposed; excerpts and authors can be absent.
+- Proposal outcome, quorum, and normalized execution lifecycle are exposed, but executable actions,
+  calldata, execution transactions, and timelock details are not. Execution state can be `unknown`
+  when the provider does not publish reliable evidence.
+- Forum topic detail is not exposed; opening-post excerpts and authors are best effort and can still
+  be absent when the upstream forum omits or denies them.
 - Vote rows expose normalized choices and source transaction hashes when they can be represented,
   while preserving provider-shaped `rawChoice` for unsupported ballots.
 - Some ballot mechanisms return `DATA_NOT_AVAILABLE` from vote summary even when vote rows exist.

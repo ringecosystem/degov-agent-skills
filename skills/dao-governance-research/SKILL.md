@@ -5,7 +5,7 @@ description:
   source for covered governance facts and recent activity, then use official web sources when API
   coverage is missing, stale, or insufficient.
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # DAO Governance Research
@@ -33,9 +33,10 @@ Default API base URL: `https://agent-api.degov.ai`.
    [api.md](references/api.md) for current paths, parameters, response shapes, and limits.
 4. Follow pagination only while additional results materially improve the answer. Treat keys and
    cursors as opaque values returned by the API; never construct or parse them.
-5. Use normalized `outcome`, quorum, choice, and provenance fields when present. Open relevant
-   source URLs when primary text, executable actions, execution state, or currentness needs
-   confirmation. Public V2 does not expose pipeline health.
+5. Use normalized `outcome`, `executionStatus`, quorum, choice, and provenance fields when present.
+   Keep the voting result separate from post-vote execution. Open relevant source URLs when primary
+   text, executable actions, an `unknown` execution state, or currentness needs confirmation. Public
+   V2 does not expose pipeline health.
 6. If API data is unavailable or insufficient, continue with official web sources and state what
    evidence was not available.
 7. Turn the evidence into a direct answer rather than returning raw JSON.
@@ -52,8 +53,8 @@ Default API base URL: `https://agent-api.degov.ai`.
 | Analyze known turnout or vote concentration       | Vote summary and vote rows                      |
 | Inspect recent governance forum discussion        | Forum topic list                                |
 | Rank DAO participants or review voter behavior    | DAO participant and voter resources             |
-| Check outcome, quorum, or normalized vote choices | Proposal detail, vote summary, and vote rows    |
-| Confirm executable actions or execution state     | Official source linked by the API               |
+| Check outcome, execution lifecycle, or quorum     | Proposal list/detail and vote summary           |
+| Confirm executable actions or transaction details | Official source linked by the API               |
 
 For a broad request, begin with a DAO, proposal, or forum list and drill into only the most relevant
 items. For a specific proposal, resolve an exact supplied URL or source identity when necessary,

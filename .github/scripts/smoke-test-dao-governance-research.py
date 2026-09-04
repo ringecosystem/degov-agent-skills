@@ -28,11 +28,11 @@ USAGE = """Usage: python3 .github/scripts/smoke-test-dao-governance-research.py 
 
 Default/--offline:
   Run deterministic local checks only: skill frontmatter and references,
-  no stale workflow or TypeScript project, security-skill validator, x402
-  compatibility fixture test, and py_compile of every test script.
+  no stale routes, workflow, or TypeScript project, security-skill validator,
+  x402 compatibility fixture test, and py_compile of every test script.
 
 --free-api:
-  Also call free API endpoints: health, data status, pricing, DAO list, and DAO detail.
+  Also validate the public OpenAPI route set, DAO list, and DAO detail.
   Uses DEGOV_AGENT_API_BASE_URL when set, otherwise https://agent-api.degov.ai.
 
 --paid:
@@ -107,8 +107,8 @@ def validate_research_skill() -> None:
         fail(f"{RESEARCH_SKILL_PATH}: expected name dao-governance-research, found {fields.get('name')!r}")
     if not fields.get("description"):
         fail(f"{RESEARCH_SKILL_PATH}: missing description")
-    if fields.get("version") != "1.0.0":
-        fail(f"{RESEARCH_SKILL_PATH}: expected version 1.0.0, found {fields.get('version')!r}")
+    if fields.get("version") != "1.0.1":
+        fail(f"{RESEARCH_SKILL_PATH}: expected version 1.0.1, found {fields.get('version')!r}")
     if not body.strip():
         fail(f"{RESEARCH_SKILL_PATH}: missing body")
 
@@ -134,27 +134,55 @@ def validate_research_skill() -> None:
             fail(f"{RESEARCH_SKILL_PATH}: does not reference {reference}")
 
     api_reference = (REFERENCES_DIR / "api.md").read_text(encoding="utf-8")
-    if "v1" in api_reference.lower() or "v1 → v2" in api_reference.lower():
-        fail(f"{REFERENCES_DIR / 'api.md'}: migration history does not belong in the current API contract")
+    if "/v1/" in api_reference.lower() or "v1 → v2" in api_reference.lower():
+        fail(f"{REFERENCES_DIR / 'api.md'}: removed route or migration history remains in the current contract")
     if "v2:ens-dao:snapshot:" in api_reference or "v2:uniswap:forum:" in api_reference:
         fail(f"{REFERENCES_DIR / 'api.md'}: key examples must remain opaque")
-    wire_shape_regressions = (
-        '"eventTimeMs": 1723046400000',
-        '"votes": 1234',
-        '"uniqueVoters": 900',
-        '"count": 4',
-        '"voteCount": 42',
-        '"daoCount": 3',
-        '"voteSummary": null',
-        '"readiness": "ready"',
-        '"field": "bodyText"',
-        '"intelligence": { "status": "ready"',
+    removed_contract_terms = (
+        "/v2/meta/data-status",
+        "/v2/meta/pricing",
+        "/v2/events",
+        "/v2/signals",
+        "/timeline",
+        "/evidence",
+        "/votes/summary",
+        "/daos/:daoId/voters",
+        "proposalKey",
+        "topicKey",
+        "voterIdentity",
+        '"readiness":',
+        '"coverageStatus":',
+        "CURSOR_EXPIRED",
     )
-    for stale_shape in wire_shape_regressions:
-        if stale_shape in api_reference:
-            fail(f"{REFERENCES_DIR / 'api.md'}: stale wire-shape example {stale_shape}")
-    if '"coverageStatus": "ready",\n    "readiness": "ready"' in api_reference:
-        fail(f"{REFERENCES_DIR / 'api.md'}: stale vote-summary coverage/readiness example")
+    combined_research_docs = content + "\n" + api_reference + "\n" + (
+        REFERENCES_DIR / "troubleshooting.md"
+    ).read_text(encoding="utf-8")
+    for stale_term in removed_contract_terms:
+        if stale_term in combined_research_docs:
+            fail(f"research skill still references removed contract term {stale_term!r}")
+
+    required_contract_terms = (
+        "/v2/daos/{daoId}/participants",
+        "/v2/proposals/{proposalId}/vote-summary",
+        "/v2/proposals/{proposalId}/votes",
+        "/v2/forum-topics",
+        "/v2/voters/{voterId}/votes",
+        "proposalId",
+        "topicId",
+        "voterId",
+        "rawChoice",
+        "knownVotingPower",
+        "dataAsOf",
+        "outcome",
+        "executionStatus",
+        "quorumRequired",
+        "choiceId",
+        "choiceLabel",
+        "transactionHash",
+    )
+    for required_term in required_contract_terms:
+        if required_term not in api_reference:
+            fail(f"{REFERENCES_DIR / 'api.md'}: missing current contract term {required_term!r}")
 
     stale_workflows = sorted(WORKFLOWS_DIR.glob("*.md")) if WORKFLOWS_DIR.exists() else []
     if stale_workflows:
@@ -203,30 +231,47 @@ def run_free_api_checks() -> None:
     print("== Free API checks ==", flush=True)
     print(f"API base: {API_BASE_URL}", flush=True)
 
-    status, payload, _ = http_get_json(f"{API_BASE_URL}/health")
-    if status != 200 or not (payload or {}).get("ok"):
-        fail(f"/health failed: status={status} payload={payload}")
-
-    status, payload, _ = http_get_json(f"{API_BASE_URL}/v2/meta/data-status")
+    status, payload, _ = http_get_json(f"{API_BASE_URL}/openapi.json")
     if status != 200:
-        fail(f"/v2/meta/data-status failed: status={status} payload={payload}")
-    counts = (payload or {}).get("data", {}).get("counts")
-    if not counts or counts.get("daos", 0) <= 0:
-        fail(f"/v2/meta/data-status: expected global dao counts, got {payload}")
+        fail(f"/openapi.json failed: status={status} payload={payload}")
+    expected_paths = {
+        "/v2/daos",
+        "/v2/daos/{daoId}",
+        "/v2/daos/{daoId}/participants",
+        "/v2/proposals",
+        "/v2/proposals/resolve",
+        "/v2/proposals/{proposalId}",
+        "/v2/proposals/{proposalId}/vote-summary",
+        "/v2/proposals/{proposalId}/votes",
+        "/v2/forum-topics",
+        "/v2/voters/{voterId}",
+        "/v2/voters/{voterId}/votes",
+    }
+    actual_paths = set((payload or {}).get("paths", {}))
+    if actual_paths != expected_paths:
+        fail(f"unexpected public OpenAPI route set: expected={sorted(expected_paths)} actual={sorted(actual_paths)}")
 
-    status, payload, _ = http_get_json(f"{API_BASE_URL}/v2/meta/pricing")
-    if status != 200:
-        fail(f"/v2/meta/pricing failed: status={status} payload={payload}")
-    routes = (payload or {}).get("data", {}).get("routes")
-    if not routes:
-        fail(f"/v2/meta/pricing: expected a route table, got {payload}")
+    expected_query_parameters = {
+        "/v2/daos": "query",
+        "/v2/proposals": "query",
+        "/v2/forum-topics": "query",
+    }
+    for path, parameter_name in expected_query_parameters.items():
+        operation = (payload or {}).get("paths", {}).get(path, {}).get("get", {})
+        parameters = operation.get("parameters", [])
+        names = {parameter.get("name") for parameter in parameters if isinstance(parameter, dict)}
+        if parameter_name not in names:
+            fail(f"{path}: OpenAPI is missing query parameter {parameter_name!r}")
 
     status, payload, _ = http_get_json(f"{API_BASE_URL}/v2/daos?limit=5")
     if status != 200:
         fail(f"/v2/daos failed: status={status} payload={payload}")
-    items = (payload or {}).get("data", {}).get("items")
-    if not items:
-        fail(f"/v2/daos: expected items, got {payload}")
+    items = (payload or {}).get("data")
+    page = (payload or {}).get("page")
+    if not isinstance(items, list) or not items or not isinstance(page, dict):
+        fail(f"/v2/daos: expected data array and page object, got {payload}")
+    if "dataAsOf" not in items[0]:
+        fail(f"/v2/daos: item missing dataAsOf provenance: {items[0]}")
     dao_id = items[0].get("daoId")
     if not dao_id:
         fail(f"/v2/daos: item missing daoId: {items[0]}")
@@ -242,8 +287,8 @@ def run_free_api_checks() -> None:
 
 def run_paid_offer_checks() -> None:
     print("== Paid-offer (zero-cost) checks ==", flush=True)
-    # events requires from/to; an unpaid request must 402 without settling anything.
-    url = f"{API_BASE_URL}/v2/events?from=2026-08-01T00:00:00Z&to=2026-08-07T00:00:00Z&limit=1"
+    # Proposal list is paid; an unpaid request must 402 without settling anything.
+    url = f"{API_BASE_URL}/v2/proposals?limit=1"
     status, payload, headers = http_get_json(url)
     if status != 402:
         fail(f"expected 402 for unpaid paid endpoint, got status={status} payload={payload}")
@@ -255,7 +300,7 @@ def run_paid_offer_checks() -> None:
     assert_offer_compatible(offer)
     print("live 402 offer is payable by the MetaMask x402_pay.py requirements (zero cost)", flush=True)
 
-    # Key-param routes must reach the payment gate (402), not 414. proposalKey
+    # Key-param routes must reach the payment gate (402), not 414. proposalId
     # values are ~190 chars; an old deployment with the default Fastify
     # maxParamLength (100) rejects them with 414 before payment is even offered.
     # A fake ~190-char key is enough to exercise the route: unpaid it must 402

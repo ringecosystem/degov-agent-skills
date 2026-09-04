@@ -1,60 +1,91 @@
-# Degov Agent API troubleshooting
+# Degov Agent API V2 troubleshooting
 
-Use this guide only after a request fails or returns data that cannot support the answer. Do not run
-a fixed preflight for every governance question.
+Use this guide after a request fails or the returned fields cannot support the user's claim. Do not
+run a fixed preflight before every governance question.
 
-## Response failures
+## First checks
 
-API errors normally use this envelope:
+1. Compare the request with `GET /openapi.json`; it is the source of truth for public paths,
+   parameters, request bodies, and response shapes.
+2. Confirm that a `daoId`, `proposalId`, `topicId`, `voterId`, and cursor came from the API rather
+   than being guessed or decoded.
+3. Preserve the response `requestId` when reporting an unexpected server failure.
+4. Do not probe operational, internal, removed, or undocumented routes to decide whether public
+   governance data is usable.
+
+## Error responses
+
+Most API errors use this envelope:
 
 ```json
 {
-  "error": { "code": "VALIDATION_ERROR", "message": "...", "details": {} },
-  "meta": { "requestId": "req-xxx", "generatedAt": "..." }
+  "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "The requested time window is too large",
+    "details": {}
+  },
+  "requestId": "req-123"
 }
 ```
 
-| Status or code                               | Meaning                                                                 | Recovery                                                                    |
-| -------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `400 VALIDATION_ERROR`                       | Invalid parameter, enum, CSV value, or date window                      | Re-read [api.md](api.md) and correct the request                            |
-| `400 RESOLVE_INPUT_REQUIRED`                 | Proposal resolver has no usable identifier                              | Supply exactly one URL, title, or external ID                               |
-| `402 PAYMENT_REQUIRED`                       | The resource requires payment                                           | Delegate the response to the `metamask-agent-wallet` skill                  |
-| `404 DAO_NOT_FOUND`                          | Unknown or uncovered DAO ID                                             | Use the DAO directory to resolve the current ID                             |
-| `404 PROPOSAL_NOT_FOUND` / `TOPIC_NOT_FOUND` | Opaque key is invalid or no longer available                            | Obtain the key again from a list, event, signal, or resolver response       |
-| `409 CURSOR_INVALID` / `CURSOR_STALE`        | Cursor does not match the resource, filters, limit, or serving revision | Drop the cursor and restart pagination only if another page is still needed |
-| `422 COVERAGE_UNAVAILABLE`                   | The requested domain is not covered                                     | Continue with official web sources and disclose the gap                     |
-| `429 RATE_LIMITED`                           | Request rate is too high                                                | Respect `Retry-After`; do not retry a payment blindly                       |
-| `500 INTERNAL_ERROR`                         | Unexpected service failure                                              | Preserve `requestId`, retry later if useful, and use web sources meanwhile  |
-| `503 DATA_UNAVAILABLE`                       | Projection or serving data is unavailable                               | Check data status, then use web sources if the outage affects the answer    |
+| Status / code                 | Meaning                                                     | Recovery                                                        |
+| ----------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- |
+| `400 INVALID_ARGUMENT`        | Unknown, malformed, conflicting, or out-of-range input      | Correct the request from `/openapi.json`; do not guess          |
+| `401 UNAUTHORIZED`            | A protected internal path was requested without authority   | Stop; use only the documented public route set                  |
+| `402 Payment Required`        | The public resource requires payment                        | Delegate the full challenge to the wallet capability            |
+| `404 NOT_FOUND`               | The requested public DAO, proposal, or voter was not found  | Reacquire the public id from a list or exact resolver           |
+| `404 DATA_NOT_AVAILABLE`      | The resource exists but that normalized data is unavailable | Use another public resource or the official source; disclose it |
+| `429 RATE_LIMITED`            | Too many requests                                           | Respect `Retry-After`; avoid blind paid retries                 |
+| `500 INTERNAL_ERROR`          | Unexpected service failure                                  | Preserve `requestId`; retry later or use an official source     |
+| `503 TEMPORARILY_UNAVAILABLE` | The public serving view cannot currently answer             | Use an official source and disclose the API outage              |
+
+Fastify can also return `413` for an oversized JSON body and `415` for a non-JSON resolver request.
 
 ## Payment failures
 
-The governance skill does not implement payment authorization or signing. Pass the complete `402`
-response to the wallet capability and follow its standard x402 workflow. If payment cannot proceed,
-use official web sources where possible and state that structured Degov API data was unavailable.
+Do not construct payment signatures or retry paid requests manually. Pass the complete 402 response,
+including its `PAYMENT-REQUIRED` header, to the `metamask-agent-wallet` capability. Let it handle
+offer inspection, authorization, signing, settlement, and replay protection.
 
-Do not manually construct payment headers, signatures, or retries in this skill.
+If the wallet capability is unavailable or payment is not authorized, continue with official web
+sources where possible and say that structured Degov API data was not used.
 
-## Freshness and coverage
+## Empty, unavailable, and ambiguous data
 
-- `ready`: use the data normally.
-- `backfilling`: data may be incomplete; disclose the limitation when material.
-- `stale`: verify time-sensitive claims against primary sources.
-- `unavailable`: do not infer missing results; switch to official web sources.
+- An empty list means no records matched the request in the current published view. It does not by
+  itself prove that the source has never had matching records.
+- DAO `availableData` describes public resource availability, not freshness. A missing family and a
+  successful family endpoint conflict should be disclosed rather than silently choosing one.
+- `DATA_NOT_AVAILABLE` from vote summary does not mean "zero votes". Vote rows may still exist for a
+  ballot mechanism that cannot currently be normalized.
+- Zero totals from a successful vote summary are evidence of zero published votes as of that
+  response's `dataAsOf`. Use the official proposal page if currentness still matters.
+- A null forum `excerpt` means the API cannot summarize the discussion. Open `source.url` rather
+  than guessing from the title.
 
-An empty list is not automatically an error. Check the DAO ID, filters, time field, time range, and
-coverage status before concluding that no activity exists.
+## Vote interpretation
 
-## Response-shape checks
+- Preserve `votingPower` and `knownVotingPower` as decimal strings.
+- Prefer `choiceId` and `choiceLabel` when they are non-null. `rawChoice` can still be a scalar,
+  array, or object and remains the provider-shaped evidence.
+- If normalized choice fields are null, state that the selection cannot be interpreted from the
+  public API alone. Do not assume that numeric values always mean For/Against/Abstain; DeGov Square
+  is the documented exception with `0` Against, `1` For, and `2` Abstain.
+- `transactionHash` is source-reported and can be null, especially for off-chain votes. Verify it on
+  the relevant explorer before making a transaction-level claim.
 
-- Preserve high-precision decimal strings instead of converting them to floating point.
-- Use `meta.page.nextCursor` only when `hasMore` is true.
-- Never reuse a cursor across different resources, limits, or filters.
-- Treat proposal keys, topic keys, and voter identities as opaque values.
-- A long opaque path value that produces `414 URI Too Long` is a server-routing problem; keep the
-  request ID and report it instead of shortening or reconstructing the key.
+## Pagination
 
-## Connectivity
+- Use `nextCursor` only when `hasMore` is true.
+- Pass the cursor back unchanged to the same route, filters, and sort.
+- Do not reuse, decode, edit, shorten, or synthesize a cursor.
+- Cursors do not expire merely because unrelated governance data was published. Pagination is live,
+  so restart when a point-in-time full traversal is required while records are changing.
 
-Use `GET /health` only when diagnosing connectivity or service availability. A successful health
-response does not establish data coverage or freshness; use the data-status resource for that.
+## Currentness
+
+Public V2 intentionally omits pipeline health, serving revisions, coverage labels, and operational
+status. `dataAsOf` on DAO, proposal, forum-topic, and vote-summary records is source-observation
+provenance, not proof that all ingestion is current. For "now", "latest", deadlines, execution, or
+other time-sensitive claims, verify the relevant `source.url` and state the evidence time in the
+answer.

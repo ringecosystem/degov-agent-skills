@@ -10,7 +10,7 @@ The skill no longer ships a CLI or local wallet: it documents the current Degov
 Agent API contract and delegates x402 authorization and signing to the MetaMask
 agent-wallet skill. The offline checks validate the compact skill document
 contract, the absence of stale workflow/TypeScript structure, and the x402 offer
-compatibility fixture (test_x402_compat).
+compatibility fixture (test_x402_compat), including method and pagination regressions.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ Default/--offline:
   x402 compatibility fixture test, and py_compile of every test script.
 
 --free-api:
-  Also validate the public OpenAPI route set, DAO list, and DAO detail.
+  Also validate public OpenAPI methods and paths, DAO pagination, and DAO detail.
   Uses DEGOV_AGENT_API_BASE_URL when set, otherwise https://agent-api.degov.ai.
 
 --paid:
@@ -201,6 +201,7 @@ def run_local_checks() -> None:
     validate_research_skill()
     run(["python3", str(TESTS_DIR / "validate-dao-governance-security.py")], cwd=ROOT)
     run(["python3", str(TESTS_DIR / "test_x402_compat.py")], cwd=ROOT)
+    run(["python3", str(TESTS_DIR / "test_research_contract.py")], cwd=ROOT)
     for path in sorted(TESTS_DIR.glob("*.py")):
         run(["python3", "-m", "py_compile", str(path)], cwd=ROOT)
 
@@ -227,29 +228,31 @@ def http_get_json(url: str) -> tuple[int, dict | None, dict[str, str]]:
         return exc.code, payload, headers
 
 
-def run_free_api_checks() -> None:
-    print("== Free API checks ==", flush=True)
-    print(f"API base: {API_BASE_URL}", flush=True)
-
-    status, payload, _ = http_get_json(f"{API_BASE_URL}/openapi.json")
-    if status != 200:
-        fail(f"/openapi.json failed: status={status} payload={payload}")
-    expected_paths = {
-        "/v2/daos",
-        "/v2/daos/{daoId}",
-        "/v2/daos/{daoId}/participants",
-        "/v2/proposals",
-        "/v2/proposals/resolve",
-        "/v2/proposals/{proposalId}",
-        "/v2/proposals/{proposalId}/vote-summary",
-        "/v2/proposals/{proposalId}/votes",
-        "/v2/forum-topics",
-        "/v2/voters/{voterId}",
-        "/v2/voters/{voterId}/votes",
+def validate_public_openapi(payload: dict | None) -> None:
+    expected_operations = {
+        "/v2/daos": "get",
+        "/v2/daos/{daoId}": "get",
+        "/v2/daos/{daoId}/participants": "get",
+        "/v2/proposals": "get",
+        "/v2/proposals/resolve": "post",
+        "/v2/proposals/{proposalId}": "get",
+        "/v2/proposals/{proposalId}/vote-summary": "get",
+        "/v2/proposals/{proposalId}/votes": "get",
+        "/v2/forum-topics": "get",
+        "/v2/voters/{voterId}": "get",
+        "/v2/voters/{voterId}/votes": "get",
     }
-    actual_paths = set((payload or {}).get("paths", {}))
-    if actual_paths != expected_paths:
-        fail(f"unexpected public OpenAPI route set: expected={sorted(expected_paths)} actual={sorted(actual_paths)}")
+    paths = (payload or {}).get("paths")
+    if not isinstance(paths, dict) or set(paths) != set(expected_operations):
+        fail(f"unexpected public OpenAPI route set: expected={sorted(expected_operations)} actual={paths}")
+    http_methods = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+    for path, expected_method in expected_operations.items():
+        path_item = paths[path]
+        if not isinstance(path_item, dict):
+            fail(f"{path}: expected an OpenAPI path object")
+        actual_methods = set(path_item) & http_methods
+        if actual_methods != {expected_method} or not isinstance(path_item.get(expected_method), dict):
+            fail(f"{path}: expected only {expected_method.upper()}, got {sorted(actual_methods)}")
 
     expected_query_parameters = {
         "/v2/daos": "query",
@@ -257,19 +260,47 @@ def run_free_api_checks() -> None:
         "/v2/forum-topics": "query",
     }
     for path, parameter_name in expected_query_parameters.items():
-        operation = (payload or {}).get("paths", {}).get(path, {}).get("get", {})
+        operation = paths[path]["get"]
         parameters = operation.get("parameters", [])
         names = {parameter.get("name") for parameter in parameters if isinstance(parameter, dict)}
         if parameter_name not in names:
             fail(f"{path}: OpenAPI is missing query parameter {parameter_name!r}")
 
+
+def validate_collection_page(payload: dict | None) -> None:
+    if not isinstance(payload, dict) or set(payload) != {"data", "page"}:
+        fail("collection response must contain only data and page")
+    if not isinstance(payload["data"], list):
+        fail("collection data must be an array")
+    page = payload["page"]
+    if not isinstance(page, dict) or set(page) != {"hasMore", "nextCursor"}:
+        fail("page must contain hasMore and nextCursor")
+    if not isinstance(page["hasMore"], bool):
+        fail("page.hasMore must be a boolean")
+    cursor = page["nextCursor"]
+    if page["hasMore"]:
+        if not isinstance(cursor, str) or not cursor.strip():
+            fail("page.nextCursor must be a non-empty string when hasMore is true")
+    elif cursor is not None:
+        fail("page.nextCursor must be null when hasMore is false")
+
+
+def run_free_api_checks() -> None:
+    print("== Free API checks ==", flush=True)
+    print(f"API base: {API_BASE_URL}", flush=True)
+
+    status, payload, _ = http_get_json(f"{API_BASE_URL}/openapi.json")
+    if status != 200:
+        fail(f"/openapi.json failed: status={status} payload={payload}")
+    validate_public_openapi(payload)
+
     status, payload, _ = http_get_json(f"{API_BASE_URL}/v2/daos?limit=5")
     if status != 200:
         fail(f"/v2/daos failed: status={status} payload={payload}")
-    items = (payload or {}).get("data")
-    page = (payload or {}).get("page")
-    if not isinstance(items, list) or not items or not isinstance(page, dict):
-        fail(f"/v2/daos: expected data array and page object, got {payload}")
+    validate_collection_page(payload)
+    items = payload["data"]
+    if not items:
+        fail(f"/v2/daos: expected at least one DAO, got {payload}")
     if "dataAsOf" not in items[0]:
         fail(f"/v2/daos: item missing dataAsOf provenance: {items[0]}")
     dao_id = items[0].get("daoId")
@@ -298,7 +329,8 @@ def run_paid_offer_checks() -> None:
         fail(f"402 response missing PAYMENT-REQUIRED header: {sorted(headers)}")
     offer = parse_payment_required(raw)
     assert_offer_compatible(offer)
-    print("live 402 offer is payable by the MetaMask x402_pay.py requirements (zero cost)", flush=True)
+    print("live 402 offer fields satisfy the expected MetaMask x402 contract (zero cost)", flush=True)
+    print("wallet transport, signing, and settlement are not exercised by this offer check", flush=True)
 
     # Key-param routes must reach the payment gate (402), not 414. proposalId
     # values are ~190 chars; an old deployment with the default Fastify

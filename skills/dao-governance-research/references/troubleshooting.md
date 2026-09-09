@@ -50,6 +50,16 @@ offer inspection, authorization, signing, settlement, and replay protection.
 If the wallet capability is unavailable or payment is not authorized, continue with official web
 sources where possible and say that structured Degov API data was not used.
 
+### Wallet transport blocked before payment
+
+If the wallet returns `403` without `PAYMENT-REQUIRED`, compare the same unsigned request with
+`curl`. A `402` from curl while the wallet receives `403` indicates a client/gateway difference, not
+a rejected payment. Check whether the wallet HTTP client includes the explicit User-Agent fix
+tracked in [MetaMask agent-skills PR #40](https://github.com/MetaMask/agent-skills/pull/40).
+Preserve that fix across wallet-skill upgrades until it is included upstream. An offer-only smoke
+test does not exercise the wallet's own transport; verify that transport without signing before
+attempting payment.
+
 ## Empty, unavailable, and ambiguous data
 
 - An empty list means no records matched the request in the current published view. It does not by

@@ -11,9 +11,9 @@ ceremony for HTTP 402 / x402 resources. That script rejects offers that:
 - use `assetTransferMethod: "permit2"` (only EIP-3009 is supported).
 
 The Degov Agent API composes with that script instead of vendoring its own payment
-code, so this test pins the *server-side* offer contract: if the API ever
-changes its 402 challenge such that the MetaMask script can no longer pay it, CI
-fails here instead of at a user's wallet.
+code. These offline fixtures check our expected server-side offer fields; the
+smoke test's --paid option applies the same assertions to a live challenge.
+Neither check executes the wallet HTTP client, signs, or verifies settlement.
 
 The fixture below is a verbatim capture of the `PAYMENT-REQUIRED` header returned
 by the staging deployment (`http://127.0.0.1:8310`) on 2026-08-07 for

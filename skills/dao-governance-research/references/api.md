@@ -312,7 +312,13 @@ Example `data`:
       "voteCount": 117,
       "knownVotingPower": "5347713.994141648005204052"
     },
-    { "id": "2", "label": "Against", "voteCount": 0, "knownVotingPower": "0" }
+    { "id": "2", "label": "Against", "voteCount": 0, "knownVotingPower": "0" },
+    {
+      "id": "3",
+      "label": "Abstain",
+      "voteCount": 1,
+      "knownVotingPower": "1813.5906598898705"
+    }
   ],
   "totals": {
     "voteCount": 118,
@@ -320,19 +326,21 @@ Example `data`:
   },
   "quorum": {
     "requiredVotingPower": "40000000",
-    "progressPercent": "13.373819462004",
+    "progressPercent": "13.373818962004",
     "reached": false
   },
   "dataAsOf": "2026-07-26T04:54:01.000Z"
 }
 ```
 
-Voting power is a decimal string and must not be converted to a binary floating-point number. A
-`quorum` value of `null` means no usable provider requirement is available; nullable progress and
-reached fields mean attainment could not be calculated safely. Governor quorum follows its
-`COUNTING_MODE` membership instead of counting Against votes automatically. A
-`404 DATA_NOT_AVAILABLE` response means a normalized summary is unavailable; it does not mean the
-proposal does not exist.
+Voting power is a decimal string and must not be converted to a binary floating-point number.
+`voteCount` includes votes with unknown voting power; `knownVotingPower` excludes their missing
+power, so a value of `"0"` does not prove that nobody voted. Compare voting power only within the
+same proposal, because providers and ballot strategies define its units. A `quorum` value of `null`
+means no usable provider requirement is available; nullable progress and reached fields mean
+attainment could not be calculated safely. Governor quorum follows its `COUNTING_MODE` membership
+instead of counting Against votes automatically. A `404 DATA_NOT_AVAILABLE` response means a
+normalized summary is unavailable; it does not mean the proposal does not exist.
 
 ### `GET /v2/proposals/{proposalId}/votes`
 
